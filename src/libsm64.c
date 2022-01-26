@@ -13,6 +13,8 @@
 #include "decomp/include/PR/os_cont.h"
 #include "decomp/engine/math_util.h"
 #include "decomp/include/sm64.h"
+#include "decomp/include/mario_animation_ids.h"
+#include "decomp/include/mario_geo_switch_case_ids.h"
 #include "decomp/shim.h"
 #include "decomp/memory.h"
 #include "decomp/global_state.h"
@@ -122,7 +124,7 @@ SM64_LIB_FN void sm64_static_surfaces_load( const struct SM64Surface *surfaceArr
     surfaces_load_static( surfaceArray, numSurfaces );
 }
 
-SM64_LIB_FN int32_t sm64_mario_create( int16_t x, int16_t y, int16_t z )
+SM64_LIB_FN int32_t sm64_mario_create( int16_t x, int16_t y, int16_t z, int16_t rx, int16_t ry, int16_t rz )
 {
     int32_t marioIndex = obj_pool_alloc_index( &s_mario_instance_pool, sizeof( struct MarioInstance ));
     struct MarioInstance *newInstance = s_mario_instance_pool.objects[marioIndex];
@@ -146,9 +148,9 @@ SM64_LIB_FN int32_t sm64_mario_create( int16_t x, int16_t y, int16_t z )
     gMarioSpawnInfoVal.startPos[1] = y;
     gMarioSpawnInfoVal.startPos[2] = z;
 
-    gMarioSpawnInfoVal.startAngle[0] = 0;
-    gMarioSpawnInfoVal.startAngle[1] = 0;
-    gMarioSpawnInfoVal.startAngle[2] = 0;
+    gMarioSpawnInfoVal.startAngle[0] = rx;
+    gMarioSpawnInfoVal.startAngle[1] = ry;
+    gMarioSpawnInfoVal.startAngle[2] = rz;
 
     gMarioSpawnInfoVal.areaIndex = 0;
     gMarioSpawnInfoVal.activeAreaIndex = 0;
@@ -223,6 +225,37 @@ SM64_LIB_FN void sm64_mario_delete( int32_t marioId )
 
     global_state_delete( globalState );
     obj_pool_free_index( &s_mario_instance_pool, marioId );
+}
+
+SM64_LIB_FN void sm64_set_mario_position(float x, float y, float z)
+{
+	gMarioState->pos[0] = x;
+	gMarioState->pos[1] = y;
+	gMarioState->pos[2] = z;
+	vec3f_copy(gMarioState->marioObj->header.gfx.pos, gMarioState->pos);
+}
+
+SM64_LIB_FN void sm64_set_mario_angle(int16_t x, int16_t y, int16_t z)
+{
+	vec3s_set(gMarioState->faceAngle, x, y, z);
+	vec3s_set(gMarioState->marioObj->header.gfx.angle, 0, gMarioState->faceAngle[1], 0);
+}
+
+SM64_LIB_FN void sm64_set_mario_velocity(float x, float y, float z)
+{
+	gMarioState->vel[0] = x;
+	gMarioState->vel[1] = y;
+	gMarioState->vel[2] = z;
+}
+
+SM64_LIB_FN void sm64_set_mario_forward_velocity(float vel)
+{
+	gMarioState->forwardVel = vel;
+}
+
+SM64_LIB_FN void sm64_set_mario_action(uint32_t action)
+{
+	set_mario_action( gMarioState, action, 0);
 }
 
 SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject )

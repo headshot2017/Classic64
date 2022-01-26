@@ -260,6 +260,19 @@ s32 act_start_sleeping(struct MarioState *m) {
     return FALSE;
 }
 
+s32 act_wave(struct MarioState *m) {
+	m->actionTimer++;
+	
+	if (m->actionTimer > 90) {
+		return set_mario_action(m, ACT_IDLE, 0);
+	}
+	
+	m->marioBodyState->handState = MARIO_HAND_RIGHT_OPEN;
+	set_mario_animation(m, MARIO_ANIM_CREDITS_WAVING);
+	
+	return FALSE;
+}
+
 s32 act_sleeping(struct MarioState *m) {
     s32 animFrame;
     if (m->input
@@ -1159,6 +1172,7 @@ s32 mario_execute_stationary_action(struct MarioState *m) {
         case ACT_BRAKING_STOP:            cancel = act_braking_stop(m);                     break;
         case ACT_BUTT_SLIDE_STOP:         cancel = act_butt_slide_stop(m);                  break;
         case ACT_HOLD_BUTT_SLIDE_STOP:    cancel = act_hold_butt_slide_stop(m);             break;
+		case ACT_UNKNOWN_0002020E:     	  cancel = act_wave(m);             				break;
     }
     /* clang-format on */
 
