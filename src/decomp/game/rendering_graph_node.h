@@ -4,6 +4,7 @@
 #include "../include/PR/ultratypes.h"
 
 #include "../engine/graph_node.h"
+#include "../mario/model.inc.h"
 
 extern struct GraphNodeRoot *gCurGraphNodeRoot;
 extern struct GraphNodeMasterList *gCurGraphNodeMasterList;

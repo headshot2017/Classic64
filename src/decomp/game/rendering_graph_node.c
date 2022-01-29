@@ -17,10 +17,6 @@
 #include "../../gfx_adapter.h"
 
 
-
-#include "../mario/model.inc.h"
-
-
 // PATCH
 static Vec3s gVec3sZero = { 0, 0, 0 };
 static Vec3f gVec3fZero = { 0, 0, 0 };

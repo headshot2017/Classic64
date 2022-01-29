@@ -60,6 +60,23 @@ struct SM64MarioGeometryBuffers
     uint16_t numTrianglesUsed;
 };
 
+struct SM64MarioColorGroup
+{
+    uint8_t shade[3];
+    uint8_t color[3];
+};
+
+struct SM64MarioModelColors
+{
+	struct SM64MarioColorGroup blue;
+	struct SM64MarioColorGroup red;
+	struct SM64MarioColorGroup white;
+	struct SM64MarioColorGroup brown1;
+	struct SM64MarioColorGroup beige;
+	struct SM64MarioColorGroup brown2;
+};
+
+
 typedef void (*SM64DebugPrintFunctionPtr)( const char * );
 
 enum
@@ -83,6 +100,7 @@ extern SM64_LIB_FN void sm64_set_mario_position(float x, float y, float z);
 extern SM64_LIB_FN void sm64_set_mario_angle(int16_t x, int16_t y, int16_t z);
 extern SM64_LIB_FN void sm64_set_mario_velocity(float x, float y, float z);
 extern SM64_LIB_FN void sm64_set_mario_forward_velocity(float vel);
+extern SM64_LIB_FN void sm64_test(uint8_t val);
 
 extern SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject );
 extern SM64_LIB_FN void sm64_surface_object_move( uint32_t objectId, const struct SM64ObjectTransform *transform );

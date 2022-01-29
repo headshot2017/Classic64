@@ -52,6 +52,13 @@ model_inc_h = """
 
 #include "../include/types.h"
 #include "../include/PR/gbi.h"
+
+extern Lights1 mario_blue_lights_group[];
+extern Lights1 mario_red_lights_group[];
+extern Lights1 mario_white_lights_group[];
+extern Lights1 mario_brown1_lights_group[];
+extern Lights1 mario_beige_lights_group[];
+extern Lights1 mario_brown2_lights_group[];
 """
 
 def main():
@@ -77,6 +84,8 @@ def main():
             lines[i] = "//" + lines[i]
         elif lines[i].startswith("const "):
             model_inc_h += "\nextern " + lines[i].replace(" = {", ";")
+        elif lines[i].startswith("static const Lights1 "):
+            lines[i] = lines[i].replace("static const Lights1", "Lights1")
 
     lines.insert(0, "#include \"../../gfx_macros.h\"")
     lines.insert(0, "#include \"../../load_tex_data.h\"")
