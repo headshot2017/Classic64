@@ -125,9 +125,9 @@ SM64_LIB_FN void sm64_static_surfaces_load( const struct SM64Surface *surfaceArr
     surfaces_load_static( surfaceArray, numSurfaces );
 }
 
-SM64_LIB_FN int32_t sm64_mario_create( int16_t x, int16_t y, int16_t z, int16_t rx, int16_t ry, int16_t rz )
+SM64_LIB_FN uint32_t sm64_mario_create( int16_t x, int16_t y, int16_t z, int16_t rx, int16_t ry, int16_t rz )
 {
-    int32_t marioIndex = obj_pool_alloc_index( &s_mario_instance_pool, sizeof( struct MarioInstance ));
+    uint32_t marioIndex = obj_pool_alloc_index( &s_mario_instance_pool, sizeof( struct MarioInstance ));
     struct MarioInstance *newInstance = s_mario_instance_pool.objects[marioIndex];
 
     newInstance->globalState = global_state_create();
@@ -174,7 +174,7 @@ SM64_LIB_FN int32_t sm64_mario_create( int16_t x, int16_t y, int16_t z, int16_t 
     return marioIndex;
 }
 
-SM64_LIB_FN void sm64_mario_tick( int32_t marioId, const struct SM64MarioInputs *inputs, struct SM64MarioState *outState, struct SM64MarioGeometryBuffers *outBuffers )
+SM64_LIB_FN void sm64_mario_tick( uint32_t marioId, const struct SM64MarioInputs *inputs, struct SM64MarioState *outState, struct SM64MarioGeometryBuffers *outBuffers )
 {
     if( marioId >= s_mario_instance_pool.size || s_mario_instance_pool.objects[marioId] == NULL )
     {
@@ -210,7 +210,7 @@ SM64_LIB_FN void sm64_mario_tick( int32_t marioId, const struct SM64MarioInputs 
     outState->faceAngle = (float)gMarioState->faceAngle[1] / 32768.0f * 3.14159f;
 }
 
-SM64_LIB_FN void sm64_mario_delete( int32_t marioId )
+SM64_LIB_FN void sm64_mario_delete( uint32_t marioId )
 {
     if( marioId >= s_mario_instance_pool.size || s_mario_instance_pool.objects[marioId] == NULL )
     {
