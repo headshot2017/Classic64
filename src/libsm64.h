@@ -95,12 +95,11 @@ extern SM64_LIB_FN uint32_t sm64_mario_create( int16_t x, int16_t y, int16_t z, 
 extern SM64_LIB_FN void sm64_mario_tick( uint32_t marioId, const struct SM64MarioInputs *inputs, struct SM64MarioState *outState, struct SM64MarioGeometryBuffers *outBuffers );
 extern SM64_LIB_FN void sm64_mario_delete( uint32_t marioId );
 
-extern SM64_LIB_FN void sm64_set_mario_action(uint32_t action);
-extern SM64_LIB_FN void sm64_set_mario_position(float x, float y, float z);
-extern SM64_LIB_FN void sm64_set_mario_angle(int16_t x, int16_t y, int16_t z);
-extern SM64_LIB_FN void sm64_set_mario_velocity(float x, float y, float z);
-extern SM64_LIB_FN void sm64_set_mario_forward_velocity(float vel);
-extern SM64_LIB_FN void sm64_test(uint8_t val);
+extern SM64_LIB_FN void sm64_set_mario_action(uint32_t marioId, uint32_t action);
+extern SM64_LIB_FN void sm64_set_mario_position(uint32_t marioId, float x, float y, float z);
+extern SM64_LIB_FN void sm64_set_mario_angle(uint32_t marioId, int16_t x, int16_t y, int16_t z);
+extern SM64_LIB_FN void sm64_set_mario_velocity(uint32_t marioId, float x, float y, float z);
+extern SM64_LIB_FN void sm64_set_mario_forward_velocity(uint32_t marioId, float vel);
 
 extern SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject );
 extern SM64_LIB_FN void sm64_surface_object_move( uint32_t objectId, const struct SM64ObjectTransform *transform );

@@ -182,7 +182,8 @@ SM64_LIB_FN void sm64_mario_tick( uint32_t marioId, const struct SM64MarioInputs
         return;
     }
 
-    global_state_bind( ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState );
+	struct GlobalState *state = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( state );
 
     update_button( inputs->buttonA, A_BUTTON );
     update_button( inputs->buttonB, B_BUTTON );
@@ -228,34 +229,49 @@ SM64_LIB_FN void sm64_mario_delete( uint32_t marioId )
     obj_pool_free_index( &s_mario_instance_pool, marioId );
 }
 
-SM64_LIB_FN void sm64_set_mario_position(float x, float y, float z)
+SM64_LIB_FN void sm64_set_mario_position(uint32_t marioId, float x, float y, float z)
 {
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
 	gMarioState->pos[0] = x;
 	gMarioState->pos[1] = y;
 	gMarioState->pos[2] = z;
 	vec3f_copy(gMarioState->marioObj->header.gfx.pos, gMarioState->pos);
 }
 
-SM64_LIB_FN void sm64_set_mario_angle(int16_t x, int16_t y, int16_t z)
+SM64_LIB_FN void sm64_set_mario_angle(uint32_t marioId, int16_t x, int16_t y, int16_t z)
 {
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
 	vec3s_set(gMarioState->faceAngle, x, y, z);
 	vec3s_set(gMarioState->marioObj->header.gfx.angle, 0, gMarioState->faceAngle[1], 0);
 }
 
-SM64_LIB_FN void sm64_set_mario_velocity(float x, float y, float z)
+SM64_LIB_FN void sm64_set_mario_velocity(uint32_t marioId, float x, float y, float z)
 {
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
 	gMarioState->vel[0] = x;
 	gMarioState->vel[1] = y;
 	gMarioState->vel[2] = z;
 }
 
-SM64_LIB_FN void sm64_set_mario_forward_velocity(float vel)
+SM64_LIB_FN void sm64_set_mario_forward_velocity(uint32_t marioId, float vel)
 {
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
 	gMarioState->forwardVel = vel;
 }
 
-SM64_LIB_FN void sm64_set_mario_action(uint32_t action)
+SM64_LIB_FN void sm64_set_mario_action(uint32_t marioId, uint32_t action)
 {
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
 	set_mario_action( gMarioState, action, 0);
 }
 
