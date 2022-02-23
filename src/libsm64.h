@@ -91,15 +91,15 @@ extern SM64_LIB_FN void sm64_global_terminate( void );
 
 extern SM64_LIB_FN void sm64_static_surfaces_load( const struct SM64Surface *surfaceArray, uint32_t numSurfaces );
 
-extern SM64_LIB_FN uint32_t sm64_mario_create( int16_t x, int16_t y, int16_t z, int16_t rx, int16_t ry, int16_t rz );
-extern SM64_LIB_FN void sm64_mario_tick( uint32_t marioId, const struct SM64MarioInputs *inputs, struct SM64MarioState *outState, struct SM64MarioGeometryBuffers *outBuffers );
-extern SM64_LIB_FN void sm64_mario_delete( uint32_t marioId );
+extern SM64_LIB_FN int32_t sm64_mario_create( int16_t x, int16_t y, int16_t z, int16_t rx, int16_t ry, int16_t rz );
+extern SM64_LIB_FN void sm64_mario_tick( int32_t marioId, const struct SM64MarioInputs *inputs, struct SM64MarioState *outState, struct SM64MarioGeometryBuffers *outBuffers );
+extern SM64_LIB_FN void sm64_mario_delete( int32_t marioId );
 
-extern SM64_LIB_FN void sm64_set_mario_action(uint32_t marioId, uint32_t action);
-extern SM64_LIB_FN void sm64_set_mario_position(uint32_t marioId, float x, float y, float z);
-extern SM64_LIB_FN void sm64_set_mario_angle(uint32_t marioId, int16_t x, int16_t y, int16_t z);
-extern SM64_LIB_FN void sm64_set_mario_velocity(uint32_t marioId, float x, float y, float z);
-extern SM64_LIB_FN void sm64_set_mario_forward_velocity(uint32_t marioId, float vel);
+extern SM64_LIB_FN void sm64_set_mario_action(int32_t marioId, uint32_t action);
+extern SM64_LIB_FN void sm64_set_mario_position(int32_t marioId, float x, float y, float z);
+extern SM64_LIB_FN void sm64_set_mario_angle(int32_t marioId, int16_t x, int16_t y, int16_t z);
+extern SM64_LIB_FN void sm64_set_mario_velocity(int32_t marioId, float x, float y, float z);
+extern SM64_LIB_FN void sm64_set_mario_forward_velocity(int32_t marioId, float vel);
 
 extern SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject );
 extern SM64_LIB_FN void sm64_surface_object_move( uint32_t objectId, const struct SM64ObjectTransform *transform );
