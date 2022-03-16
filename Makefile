@@ -1,6 +1,7 @@
 default: lib
 
 CC      := cc
+AR		:= ar
 CFLAGS  := -g -Wall -fPIC -DSM64_LIB_EXPORT
 LDFLAGS := -lm -shared
 
@@ -9,6 +10,8 @@ BUILD_DIR := build
 DIST_DIR  := dist
 ALL_DIRS  := $(addprefix $(BUILD_DIR)/,$(SRC_DIRS))
 
+STATIC_LIB := libsm64.a
+STATIC_LIB_FILE   := $(DIST_DIR)/$(STATIC_LIB)
 LIB_FILE   := $(DIST_DIR)/libsm64.so
 LIB_H_FILE := $(DIST_DIR)/include/libsm64.h
 TEST_FILE  := run-test
@@ -25,6 +28,8 @@ TEST_SRCS := test/main.c test/context.c test/level.c
 TEST_OBJS := $(foreach file,$(TEST_SRCS),$(BUILD_DIR)/$(file:.c=.o))
 
 ifeq ($(OS),Windows_NT)
+  STATIC_LIB := sm64.lib
+  STATIC_LIB_FILE := $(DIST_DIR)/$(STATIC_LIB)
   LIB_FILE := $(DIST_DIR)/sm64.dll
 endif
 
@@ -41,6 +46,9 @@ $(BUILD_DIR)/%.o: %.c $(IMPORTED)
 
 $(LIB_FILE): $(O_FILES)
 	$(CC) $(LDFLAGS) -o $@ $^
+	
+$(STATIC_LIB_FILE): $(O_FILES)
+	$(AR) -r -o $@ $^
 
 $(LIB_H_FILE): src/libsm64.h
 	cp -f $< $@
@@ -59,7 +67,7 @@ $(TEST_FILE): $(LIB_FILE) $(TEST_OBJS)
 	$(CC) -o $@ $(TEST_OBJS) $(LIB_FILE) -lGLEW -lGL -lSDL2 -lSDL2main -lm
 
 
-lib: $(LIB_FILE) $(LIB_H_FILE)
+lib: $(LIB_FILE) $(LIB_H_FILE) $(STATIC_LIB_FILE)
 
 test: $(TEST_FILE) $(LIB_H_FILE)
 
