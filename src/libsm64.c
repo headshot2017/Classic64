@@ -125,7 +125,7 @@ SM64_LIB_FN void sm64_static_surfaces_load( const struct SM64Surface *surfaceArr
     surfaces_load_static( surfaceArray, numSurfaces );
 }
 
-SM64_LIB_FN int32_t sm64_mario_create( int16_t x, int16_t y, int16_t z, int16_t rx, int16_t ry, int16_t rz )
+SM64_LIB_FN int32_t sm64_mario_create( float x, float y, float z, int16_t rx, int16_t ry, int16_t rz )
 {
     int32_t marioIndex = obj_pool_alloc_index( &s_mario_instance_pool, sizeof( struct MarioInstance ));
     struct MarioInstance *newInstance = s_mario_instance_pool.objects[marioIndex];
@@ -209,6 +209,8 @@ SM64_LIB_FN void sm64_mario_tick( int32_t marioId, const struct SM64MarioInputs 
     vec3f_copy( outState->position, gMarioState->pos );
     vec3f_copy( outState->velocity, gMarioState->vel );
     outState->faceAngle = (float)gMarioState->faceAngle[1] / 32768.0f * 3.14159f;
+	outState->action = gMarioState->action;
+	outState->flags = gMarioState->flags;
 }
 
 SM64_LIB_FN void sm64_mario_delete( int32_t marioId )
@@ -275,6 +277,14 @@ SM64_LIB_FN void sm64_set_mario_action(int32_t marioId, uint32_t action)
 	set_mario_action( gMarioState, action, 0);
 }
 
+SM64_LIB_FN void sm64_set_mario_state(int32_t marioId, uint32_t flags)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
+	gMarioState->flags = flags;
+}
+
 SM64_LIB_FN void sm64_set_mario_colors(struct SM64MarioModelColors *modelColors)
 {
 	memcpy(mario_blue_lights_group->a.l.col,  modelColors->blue.shade, 3);
@@ -289,6 +299,14 @@ SM64_LIB_FN void sm64_set_mario_colors(struct SM64MarioModelColors *modelColors)
 	memcpy(mario_beige_lights_group->l->l.col, modelColors->beige.color, 3);
 	memcpy(mario_brown2_lights_group->a.l.col,  modelColors->brown2.shade, 3);
 	memcpy(mario_brown2_lights_group->l->l.col, modelColors->brown2.color, 3);
+}
+
+SM64_LIB_FN void sm64_set_mario_water_level(int32_t marioId, signed int level)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
+	gMarioState->waterLevel = level;
 }
 
 SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject )

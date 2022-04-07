@@ -353,10 +353,10 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor)
 
 f32 find_water_level(f32 x, f32 z)
 {
-	return -10000.0f;
+	return -100000.0f;
 }
 
 f32 find_poison_gas_level(f32 x, f32 z)
 {
-	return -10000.0f;
+	return -100000.0f;
 }
