@@ -4,7 +4,7 @@
 #include "../include/sm64.h"
 //#include "behavior_data.h"
 #include "mario_actions_automatic.h"
-//#include "audio/external.h"
+#include "../audio/external.h"
 #include "area.h"
 #include "mario.h"
 #include "mario_step.h"

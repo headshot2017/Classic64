@@ -7,7 +7,7 @@
 #include "../include/sm64.h"
 
 #include "area.h"
-// #include "audio/external.h"
+#include "../audio/external.h"
 // #include "behavior_actions.h"
 // #include "behavior_data.h"
 #include "camera.h"
@@ -1329,8 +1329,16 @@ void update_mario_geometry_inputs(struct MarioState *m) {
 
     m->floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &m->floor);
 
-	if(m->floor != NULL) {
-		m->curTerrain = m->floor->terrain;
+	if (m->floor != NULL) {
+		if(m->overrideFloorType < 0x39) {
+			m->floor->type = m->overrideFloorType;
+		}
+		if(m->overrideTerrain < 0x7) {
+			m->curTerrain = m->overrideTerrain;
+			m->floor->terrain = m->overrideTerrain;
+		} else {
+			m->curTerrain = m->floor->terrain;
+		}
 	}
 
     // If Mario is OOB, move his position to his graphical position (which was not updated)
@@ -1782,7 +1790,7 @@ s32 execute_mario_action(UNUSED struct Object *o) {
 #endif
         }
 
-        play_infinite_stairs_music();
+        //play_infinite_stairs_music();
         gMarioState->marioObj->oInteractStatus = 0;
 #ifdef VERSION_SH
         func_sh_8025574C();
@@ -1840,6 +1848,9 @@ int init_mario(void) {
     vec3s_set(gMarioState->angleVel, 0, 0, 0);
     vec3f_copy(gMarioState->pos, gMarioSpawnInfo->startPos);
     vec3f_set(gMarioState->vel, 0, 0, 0);
+
+	gMarioState->overrideTerrain = 0x7;
+	gMarioState->overrideFloorType = 0x39;
 
     gMarioState->floorHeight =
         find_floor(gMarioState->pos[0], gMarioState->pos[1], gMarioState->pos[2], &gMarioState->floor);
