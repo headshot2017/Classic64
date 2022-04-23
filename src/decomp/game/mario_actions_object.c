@@ -8,7 +8,7 @@
 #include "../include/types.h"
 #include "mario_step.h"
 #include "mario.h"
-//#include "audio/external.h"
+#include "../audio/external.h"
 #include "interaction.h"
 //#include "audio_defines.h"
 #include "../engine/math_util.h"

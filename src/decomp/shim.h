@@ -1,6 +1,6 @@
 #pragma once
 
-#include "include/types.h"
+#include <types.h>
 #include "game/area.h"
 #include "game/level_update.h"
 #include "../libsm64.h"
@@ -19,7 +19,7 @@
 #define gSpecialTripleJump   (g_state->mgSpecialTripleJump)
 #define gCurrLevelNum        (g_state->mgCurrLevelNum)
 #define gCameraMovementFlags (g_state->mgCameraMovementFlags)
-#define gAudioRandom         (g_state->mgAudioRandom)
+//#define gAudioRandom         (g_state->mgAudioRandom)
 #define gShowDebugText       (g_state->mgShowDebugText)
 #define gDebugLevelSelect    (g_state->mgDebugLevelSelect)
 #define gCurrSaveFileNum     (g_state->mgCurrSaveFileNum)
@@ -36,12 +36,12 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-static void play_sound(s32 soundBits, f32 *pos) {}
+//extern void play_sound(s32 soundBits, f32 *pos);
 static void enable_time_stop() {}
 static void disable_time_stop() {}
 static void *segmented_to_virtual(const void *addr) { return (void*)addr; }
 static void *virtual_to_segmented(u32 segment, const void *addr) { return (void*)addr; }
-static void func_80320A4C(u8 bankIndex, u8 arg1) {}
+//static void func_80320A4C(u8 bankIndex, u8 arg1) {}
 static void raise_background_noise(s32 a) {}
 static void lower_background_noise(s32 a) {}
 static void set_camera_mode(struct Camera *c, s16 mode, s16 frames) {}
