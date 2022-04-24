@@ -24,7 +24,6 @@
 #include "decomp/engine/surface_collision.h"
 #include "decomp/engine/graph_node.h"
 #include "decomp/engine/geo_layout.h"
-#include "decomp/mario/model.inc.h"
 #include "decomp/game/rendering_graph_node.h"
 #include "decomp/mario/geo.inc.h"
 #include "decomp/game/platform_displacement.h"
@@ -42,6 +41,7 @@
 #include "decomp/pc/audio/audio_alsa.h"
 #include "decomp/audio/external.h"
 #include "decomp/audio/load_dat.h"
+#include "decomp/mario/geo.inc.h"
 
 static struct AllocOnlyPool *s_mario_geo_pool = NULL;
 static struct GraphNode *s_mario_graph_node = NULL;
@@ -110,6 +110,7 @@ SM64_LIB_FN void sm64_global_init( uint8_t *rom, uint8_t *bank_sets,uint8_t *seq
         memcpy(gSoundDataADSR,sound_data_ctl,ctl_len);
         memcpy(gSoundDataRaw,sound_data_tbl,tbl_len);
     }
+	initMarioGeo(rom);
 	
     if( s_init_global )
         sm64_global_terminate();
@@ -406,22 +407,6 @@ SM64_LIB_FN void sm64_set_mario_state(int32_t marioId, uint32_t flags)
     global_state_bind( globalState );
 	
 	gMarioState->flags = flags;
-}
-
-SM64_LIB_FN void sm64_set_mario_colors(struct SM64MarioModelColors *modelColors)
-{
-	memcpy(mario_blue_lights_group->a.l.col,  modelColors->blue.shade, 3);
-	memcpy(mario_blue_lights_group->l->l.col, modelColors->blue.color, 3);
-	memcpy(mario_red_lights_group->a.l.col,  modelColors->red.shade, 3);
-	memcpy(mario_red_lights_group->l->l.col, modelColors->red.color, 3);
-	memcpy(mario_white_lights_group->a.l.col,  modelColors->white.shade, 3);
-	memcpy(mario_white_lights_group->l->l.col, modelColors->white.color, 3);
-	memcpy(mario_brown1_lights_group->a.l.col,  modelColors->brown1.shade, 3);
-	memcpy(mario_brown1_lights_group->l->l.col, modelColors->brown1.color, 3);
-	memcpy(mario_beige_lights_group->a.l.col,  modelColors->beige.shade, 3);
-	memcpy(mario_beige_lights_group->l->l.col, modelColors->beige.color, 3);
-	memcpy(mario_brown2_lights_group->a.l.col,  modelColors->brown2.shade, 3);
-	memcpy(mario_brown2_lights_group->l->l.col, modelColors->brown2.color, 3);
 }
 
 SM64_LIB_FN void sm64_set_mario_water_level(int32_t marioId, signed int level)
