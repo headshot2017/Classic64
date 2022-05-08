@@ -12,6 +12,9 @@
   #define SIZE_T_FORMAT "%zu"
 #endif
 
+#define FIRST_NIBBLE(x) ((x) >> 4)
+#define SECOND_NIBBLE(x) ((x) & 0xF)
+
 #define KB 1024
 #define MB (1024 * KB)
 
@@ -38,6 +41,8 @@
    (buf)[0] = ((val) >> 8) & 0xFF; \
    (buf)[1] = ((val)) & 0xFF; \
 } while(0)
+
+#define read_s32_be(buf) (int)(((buf)[0] << 24) + ((buf)[1] << 16) + ((buf)[2] << 8) + ((buf)[3]))
 
 // print nibbles and bytes
 #define fprint_nibble(FP, NIB_) fputc((NIB_) < 10 ? ('0' + (NIB_)) : ('A' + (NIB_) - 0xA), FP)

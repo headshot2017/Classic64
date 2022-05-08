@@ -24,7 +24,6 @@
 #include "decomp/engine/surface_collision.h"
 #include "decomp/engine/graph_node.h"
 #include "decomp/engine/geo_layout.h"
-#include "decomp/mario/model.inc.h"
 #include "decomp/game/rendering_graph_node.h"
 #include "decomp/mario/geo.inc.h"
 #include "decomp/game/platform_displacement.h"
@@ -42,6 +41,9 @@
 #include "decomp/pc/audio/audio_alsa.h"
 #include "decomp/audio/external.h"
 #include "decomp/audio/load_dat.h"
+#include "decomp/tools/convTypes.h"
+#include "decomp/tools/convUtils.h"
+#include "decomp/mario/geo.inc.h"
 
 static struct AllocOnlyPool *s_mario_geo_pool = NULL;
 static struct GraphNode *s_mario_graph_node = NULL;
@@ -93,72 +95,92 @@ static void free_area( struct Area *area )
 }
 
 pthread_t gSoundThread;
+uint8_t* adsr = NULL;
 SM64_LIB_FN void sm64_global_init( uint8_t *rom, uint8_t *bank_sets,uint8_t *sequences_bin, uint8_t *sound_data_ctl,
 									uint8_t *sound_data_tbl, int bank_set_len, int sequences_len, int ctl_len, int tbl_len,
 									uint8_t *outTexture, SM64DebugPrintFunctionPtr debugPrintFunction )
 {
+	g_debug_print_func = debugPrintFunction;
+	
 	hasAudio = false;
-	if (bank_set_len != 0 && sequences_len != 0 && ctl_len != 0 && tbl_len != 0)
-    {
-        hasAudio=true;
-        gBankSetsData=malloc(bank_set_len);
-        gMusicData=malloc(sequences_len);
-        gSoundDataADSR=malloc(ctl_len);
-        gSoundDataRaw=malloc(tbl_len);
-        memcpy(gBankSetsData,bank_sets,bank_set_len);
-        memcpy(gMusicData,sequences_bin,sequences_len);
-        memcpy(gSoundDataADSR,sound_data_ctl,ctl_len);
-        memcpy(gSoundDataRaw,sound_data_tbl,tbl_len);
-    }
+	//if (bank_set_len != 0 && sequences_len != 0 && ctl_len != 0 && tbl_len != 0)
+    //{
+    //    hasAudio=true;
+    //    gBankSetsData=malloc(bank_set_len);
+    //    gMusicData=malloc(sequences_len);
+    //    gSoundDataADSR=malloc(ctl_len);
+    //    gSoundDataRaw=malloc(tbl_len);
+    //    memcpy(gBankSetsData,bank_sets,bank_set_len);
+    //    memcpy(gMusicData,sequences_bin,sequences_len);
+    //    memcpy(gSoundDataADSR,sound_data_ctl,ctl_len);
+    //    memcpy(gSoundDataRaw,sound_data_tbl,tbl_len);
+    //} else {
+	//	DEBUG_PRINT("Couldn't find all sound files");
+	//}
+	
+	hasAudio = true;
+	uint8_t* rom2 = malloc(0x800000);
+	memcpy(rom2, rom, 0x800000);
+	rom = rom2;
+	//adsr = parse_seqfile(rom+0x57B720); //ctl
+	gSoundDataADSR = parse_seqfile(rom+0x57B720); //ctl
+	gSoundDataRaw = parse_seqfile(rom+0x593560); //tbl
+	gMusicData = parse_seqfile(rom+0x7B0860);
+	gBankSetsData = rom+0x7CC621;
+	memmove(gBankSetsData+0x45,gBankSetsData+0x45-1,0x5B);
+	gBankSetsData[0x45]=0x00;
+	update_CTL_sample_pointers(gSoundDataADSR,gSoundDataRaw);
+	
+	DEBUG_PRINT("ADSR: %p, raw: %p, bs: %p, seq: %p", gSoundDataADSR, gSoundDataRaw, gBankSetsData, gMusicData);
+	//update_CTL_sample_pointers(adsr,gSoundDataRaw);
+	//DEBUG_PRINT("ADSR: %p, raw: %p, bs: %p, seq: %p", adsr, gSoundDataRaw, gBankSetsData, gMusicData);
+	
+	initMarioGeo(rom);
 	
     if( s_init_global )
         sm64_global_terminate();
 
     s_init_global = true;
-    g_debug_print_func = debugPrintFunction;
 
     load_mario_textures_from_rom( rom, outTexture );
     load_mario_anims_from_rom( rom );
 
     memory_init();
-	if (hasAudio)
-	{
-    #if HAVE_WASAPI
-        if (audio_api == NULL && audio_wasapi.init()) {
-            audio_api = &audio_wasapi;
+	if(hasAudio) {
+		#if HAVE_WASAPI
+		if (audio_api == NULL && audio_wasapi.init()) {
+			audio_api = &audio_wasapi;
 			DEBUG_PRINT("Audio API: WASAPI");
 		}
-    #endif
-    #if HAVE_PULSE_AUDIO
-        if (audio_api == NULL && audio_pulse.init()) {
-            audio_api = &audio_pulse;
+		#endif
+		#if HAVE_PULSE_AUDIO
+		if (audio_api == NULL && audio_pulse.init()) {
+			audio_api = &audio_pulse;
 			DEBUG_PRINT("Audio API: PulseAudio");
 		}
-    #endif
-    #if HAVE_ALSA
-        if (audio_api == NULL && audio_alsa.init()) {
-            audio_api = &audio_alsa;
+		#endif
+		#if HAVE_ALSA
+		if (audio_api == NULL && audio_alsa.init()) {
+			audio_api = &audio_alsa;
 			DEBUG_PRINT("Audio API: Alsa");
 		}
-    #endif
-    #ifdef TARGET_WEB
-        if (audio_api == NULL && audio_sdl.init()) {
-            audio_api = &audio_sdl;
+		#endif
+		#ifdef TARGET_WEB
+		if (audio_api == NULL && audio_sdl.init()) {
+			audio_api = &audio_sdl;
 			DEBUG_PRINT("Audio API: SDL");
 		}
-    #endif
-        if (audio_api == NULL) {
-            audio_api = &audio_null;
+		#endif
+		if (audio_api == NULL) {
+			audio_api = &audio_null;
 			DEBUG_PRINT("Audio API: Null");
 		}
-        
-        audio_init();
-        sound_init();
-        sound_reset(0);
-        pthread_create(&gSoundThread, NULL, audio_thread, &s_init_global);
-    } else {
-        DEBUG_PRINT("No audio support");
-    }
+		
+		audio_init();
+		sound_init();
+		sound_reset(0);
+		pthread_create(&gSoundThread, NULL, audio_thread, &s_init_global);
+	}
 }
 
 SM64_LIB_FN void sm64_global_terminate( void )
@@ -408,22 +430,6 @@ SM64_LIB_FN void sm64_set_mario_state(int32_t marioId, uint32_t flags)
 	gMarioState->flags = flags;
 }
 
-SM64_LIB_FN void sm64_set_mario_colors(struct SM64MarioModelColors *modelColors)
-{
-	memcpy(mario_blue_lights_group->a.l.col,  modelColors->blue.shade, 3);
-	memcpy(mario_blue_lights_group->l->l.col, modelColors->blue.color, 3);
-	memcpy(mario_red_lights_group->a.l.col,  modelColors->red.shade, 3);
-	memcpy(mario_red_lights_group->l->l.col, modelColors->red.color, 3);
-	memcpy(mario_white_lights_group->a.l.col,  modelColors->white.shade, 3);
-	memcpy(mario_white_lights_group->l->l.col, modelColors->white.color, 3);
-	memcpy(mario_brown1_lights_group->a.l.col,  modelColors->brown1.shade, 3);
-	memcpy(mario_brown1_lights_group->l->l.col, modelColors->brown1.color, 3);
-	memcpy(mario_beige_lights_group->a.l.col,  modelColors->beige.shade, 3);
-	memcpy(mario_beige_lights_group->l->l.col, modelColors->beige.color, 3);
-	memcpy(mario_brown2_lights_group->a.l.col,  modelColors->brown2.shade, 3);
-	memcpy(mario_brown2_lights_group->l->l.col, modelColors->brown2.color, 3);
-}
-
 SM64_LIB_FN void sm64_set_mario_water_level(int32_t marioId, signed int level)
 {
 	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
@@ -447,6 +453,14 @@ SM64_LIB_FN void sm64_mario_take_damage(int32_t marioId, uint32_t damage, uint32
     global_state_bind( globalState );
 	
 	fake_damage_knock_back(gMarioState, damage, subtype, x, y, z);
+}
+
+SM64_LIB_FN void sm64_mario_heal(int32_t marioId, uint8_t healCounter)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
+	gMarioState->healCounter += healCounter;
 }
 
 SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject )
