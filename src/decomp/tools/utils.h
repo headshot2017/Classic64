@@ -42,6 +42,8 @@
    (buf)[1] = ((val)) & 0xFF; \
 } while(0)
 
+#define read_s32_be(buf) (int)(((buf)[0] << 24) + ((buf)[1] << 16) + ((buf)[2] << 8) + ((buf)[3]))
+
 // print nibbles and bytes
 #define fprint_nibble(FP, NIB_) fputc((NIB_) < 10 ? ('0' + (NIB_)) : ('A' + (NIB_) - 0xA), FP)
 #define fprint_byte(FP, BYTE_) do { \
