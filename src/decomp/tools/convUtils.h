@@ -3,6 +3,13 @@
 
 #define read_u16_le(p) ((uint8_t*)p)[1] * 0x100u + ((uint8_t*)p)[0]
 
+struct EnvelopeMeta {
+	int loaded;
+	int size;
+	uintptr_t orig;
+	struct Envelope* addr;
+};
+
 struct seqFile* parse_seqfile(unsigned char* seq);
 struct CTL* parse_ctl_data(unsigned char* ctlData, uintptr_t* pos);
 struct TBL* parse_tbl_data(unsigned char* tbl);

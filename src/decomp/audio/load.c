@@ -654,7 +654,7 @@ struct AudioBank *bank_load_immediate(s32 bankId, s32 arg1) {
     if (ret == NULL) {
         return NULL;
     }
-	//DEBUG_PRINT("bank load: %d, size: %d", bankId, alloc);
+	DEBUG_PRINT("bank load: %d, size: %d", bankId, alloc);
     audio_dma_copy_immediate((uintptr_t) ctlData, buf, 0x10);
     numInstruments = buf[0];
     numDrums = buf[1];
@@ -689,7 +689,7 @@ struct AudioBank *bank_load_async(s32 bankId, s32 arg1, struct SequencePlayer *s
     if (ret == NULL) {
         return NULL;
     }
-
+	
     audio_dma_copy_immediate((uintptr_t) ctlData, buf, 0x10);
     numInstruments = buf[0];
     numDrums = buf[1];
