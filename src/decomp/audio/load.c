@@ -7,7 +7,6 @@
 #include "load.h"
 #include "seqplayer.h"
 #include "load_dat.h"
-#include "../../debug_print.h"
 
 #define ALIGN16(val) (((val) + 0xF) & ~0xF)
 
@@ -472,9 +471,9 @@ void patch_sound(UNUSED struct AudioBankSound *sound, UNUSED u8 *memBase, UNUSED
             (*sample).book = patched;                                                     \
             (*sample).loaded = 1;                                                         \
         }                                                                                 \
-    }                                                                                  \
+    }                                                                                     \
 }
-#endif                                                                                       \
+#endif
 
 // on US/JP this inlines patch_sound, using some -sopt compiler flag
 void patch_audio_bank(struct AudioBank *mem, u8 *offset, u32 numInstruments, u32 numDrums) {
@@ -598,6 +597,7 @@ struct AudioBank *bank_load_immediate(s32 bankId, s32 arg1) {
     if (ret == NULL) {
         return NULL;
     }
+	
     audio_dma_copy_immediate((uintptr_t) ctlData, buf, 0x10);
     numInstruments = buf[0];
     numDrums = buf[1];
@@ -608,7 +608,6 @@ struct AudioBank *bank_load_immediate(s32 bankId, s32 arg1) {
     gCtlEntries[bankId].instruments = ret->instruments;
     gCtlEntries[bankId].drums = ret->drums;
     gBankLoadStatus[bankId] = SOUND_LOAD_STATUS_COMPLETE;
-	DEBUG_PRINT("bank load: %d, size: %d, at: %p, cpy: %p", bankId, alloc, ctlData, ret);
     return ret;
 }
 
@@ -624,7 +623,6 @@ struct AudioBank *bank_load_async(s32 bankId, s32 arg1, struct SequencePlayer *s
 #if defined(VERSION_EU)
     UNUSED u32 pad3;
 #endif
-
     alloc = gAlCtlHeader->seqArray[bankId].len + 0xf;
     alloc = ALIGN16(alloc);
     alloc -= 0x10;

@@ -51,7 +51,6 @@ static struct AudioAPI *audio_api;
 
 static bool s_init_global = false;
 static bool s_init_one_mario = false;
-bool hasAudio = false;
 
 struct MarioInstance
 {
@@ -95,29 +94,10 @@ static void free_area( struct Area *area )
 }
 
 pthread_t gSoundThread;
-SM64_LIB_FN void sm64_global_init( uint8_t *rom, uint8_t *bank_sets,uint8_t *sequences_bin, uint8_t *sound_data_ctl,
-									uint8_t *sound_data_tbl, int bank_set_len, int sequences_len, int ctl_len, int tbl_len,
-									uint8_t *outTexture, SM64DebugPrintFunctionPtr debugPrintFunction )
+SM64_LIB_FN void sm64_global_init( uint8_t *rom, uint8_t *outTexture, SM64DebugPrintFunctionPtr debugPrintFunction )
 {
 	g_debug_print_func = debugPrintFunction;
 	
-	//hasAudio = false;
-	//if (bank_set_len != 0 && sequences_len != 0 && ctl_len != 0 && tbl_len != 0)
-    //{
-    //    hasAudio=true;
-    //    gBankSetsData=malloc(bank_set_len);
-    //    gMusicData=malloc(sequences_len);
-    //    gSoundDataADSR=malloc(ctl_len);
-    //    gSoundDataRaw=malloc(tbl_len);
-    //    memcpy(gBankSetsData,bank_sets,bank_set_len);
-    //    memcpy(gMusicData,sequences_bin,sequences_len);
-    //    memcpy(gSoundDataADSR,sound_data_ctl,ctl_len);
-    //    memcpy(gSoundDataRaw,sound_data_tbl,tbl_len);
-    //} else {
-	//	DEBUG_PRINT("Couldn't find all sound files");
-	//}
-	
-	hasAudio = true;
 	uint8_t* rom2 = malloc(0x800000);
 	memcpy(rom2, rom, 0x800000);
 	rom = rom2;
@@ -142,41 +122,40 @@ SM64_LIB_FN void sm64_global_init( uint8_t *rom, uint8_t *bank_sets,uint8_t *seq
     load_mario_anims_from_rom( rom );
 
     memory_init();
-	if(hasAudio) {
-		#if HAVE_WASAPI
-		if (audio_api == NULL && audio_wasapi.init()) {
-			audio_api = &audio_wasapi;
-			DEBUG_PRINT("Audio API: WASAPI");
-		}
-		#endif
-		#if HAVE_PULSE_AUDIO
-		if (audio_api == NULL && audio_pulse.init()) {
-			audio_api = &audio_pulse;
-			DEBUG_PRINT("Audio API: PulseAudio");
-		}
-		#endif
-		#if HAVE_ALSA
-		if (audio_api == NULL && audio_alsa.init()) {
-			audio_api = &audio_alsa;
-			DEBUG_PRINT("Audio API: Alsa");
-		}
-		#endif
-		#ifdef TARGET_WEB
-		if (audio_api == NULL && audio_sdl.init()) {
-			audio_api = &audio_sdl;
-			DEBUG_PRINT("Audio API: SDL");
-		}
-		#endif
-		if (audio_api == NULL) {
-			audio_api = &audio_null;
-			DEBUG_PRINT("Audio API: Null");
-		}
-		
-		audio_init();
-		sound_init();
-		sound_reset(0);
-		pthread_create(&gSoundThread, NULL, audio_thread, &s_init_global);
+	
+	#if HAVE_WASAPI
+	if (audio_api == NULL && audio_wasapi.init()) {
+		audio_api = &audio_wasapi;
+		DEBUG_PRINT("Audio API: WASAPI");
 	}
+	#endif
+	#if HAVE_PULSE_AUDIO
+	if (audio_api == NULL && audio_pulse.init()) {
+		audio_api = &audio_pulse;
+		DEBUG_PRINT("Audio API: PulseAudio");
+	}
+	#endif
+	#if HAVE_ALSA
+	if (audio_api == NULL && audio_alsa.init()) {
+		audio_api = &audio_alsa;
+		DEBUG_PRINT("Audio API: Alsa");
+	}
+	#endif
+	#ifdef TARGET_WEB
+	if (audio_api == NULL && audio_sdl.init()) {
+		audio_api = &audio_sdl;
+		DEBUG_PRINT("Audio API: SDL");
+	}
+	#endif
+	if (audio_api == NULL) {
+		audio_api = &audio_null;
+		DEBUG_PRINT("Audio API: Null");
+	}
+	
+	audio_init();
+	sound_init();
+	sound_reset(0);
+	pthread_create(&gSoundThread, NULL, audio_thread, &s_init_global);
 }
 
 SM64_LIB_FN void sm64_global_terminate( void )
