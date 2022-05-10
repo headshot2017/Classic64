@@ -9,9 +9,11 @@
 #include "../../debug_print.h"
 
 /**
- * This code is based on the only documentation that exists (that I know of) for the SM64 CTL/TBL format.
+ * This code is based on the only documentation that exists (that I know of) for the SM64 CTL/TBL format
+ * as well as dylanpdx's audio extraction implementation.
  * https://github.com/n64decomp/sm64/blob/1372ae1bb7cbedc03df366393188f4f05dcfc422/tools/disassemble_sound.py
  * https://github.com/n64decomp/sm64/blob/1372ae1bb7cbedc03df366393188f4f05dcfc422/tools/assemble_sound.py
+ * https://github.com/Retro64Mod/libsm64-retro64
  */
  
 #define ALIGN16(val) (((val) + 0xF) & ~0xF)
