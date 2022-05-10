@@ -19,6 +19,8 @@
  
 #define ALIGN16(val) (((val) + 0xF) & ~0xF)
 
+unsigned char* gCtlSeqs;
+
 struct seqFile* parse_seqfile(unsigned char* seq){ /* Read SeqFile data */
     short revision = read_u16_be(seq);
     short bankCount = read_u16_be(seq + 2);
@@ -34,8 +36,8 @@ struct seqFile* parse_seqfile(unsigned char* seq){ /* Read SeqFile data */
     if (revision == TYPE_CTL){
         // CTL file, contains instrument and drum data, this is really the only one that needs to be parsed, the rest only needs a header change
         //unsigned char* ctlSeqs = malloc(0x20B40);
-		unsigned char* ctlSeqs = (unsigned char*)calloc(0x40B40, 1);
-		uintptr_t pos = (uintptr_t)ctlSeqs;
+		gCtlSeqs = (unsigned char*)calloc(0x40B40, 1);
+		uintptr_t pos = (uintptr_t)gCtlSeqs;
 		for (int i = 0; i < bankCount; i++){
 			uintptr_t start = pos;
             struct CTL* ptr = parse_ctl_data(seq+(seqFile->seqArray[i].offset), &pos);
@@ -55,6 +57,10 @@ struct seqFile* parse_seqfile(unsigned char* seq){ /* Read SeqFile data */
     }
 
     return seqFile;
+}
+
+void ctl_free(){
+	free(gCtlSeqs);
 }
 
 void snd_ptrs_to_offsets(struct Sound* snd, uintptr_t ctlData){

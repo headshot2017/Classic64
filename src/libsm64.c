@@ -95,7 +95,6 @@ static void free_area( struct Area *area )
 }
 
 pthread_t gSoundThread;
-uint8_t* adsr;
 SM64_LIB_FN void sm64_global_init( uint8_t *rom, uint8_t *bank_sets,uint8_t *sequences_bin, uint8_t *sound_data_ctl,
 									uint8_t *sound_data_tbl, int bank_set_len, int sequences_len, int ctl_len, int tbl_len,
 									uint8_t *outTexture, SM64DebugPrintFunctionPtr debugPrintFunction )
@@ -122,14 +121,12 @@ SM64_LIB_FN void sm64_global_init( uint8_t *rom, uint8_t *bank_sets,uint8_t *seq
 	uint8_t* rom2 = malloc(0x800000);
 	memcpy(rom2, rom, 0x800000);
 	rom = rom2;
-	//adsr = parse_seqfile(rom+0x57B720); //ctl
 	gSoundDataADSR = parse_seqfile(rom+0x57B720); //ctl
 	gSoundDataRaw = parse_seqfile(rom+0x593560); //tbl
 	gMusicData = parse_seqfile(rom+0x7B0860);
 	gBankSetsData = rom+0x7CC621;
 	memmove(gBankSetsData+0x45,gBankSetsData+0x45-1,0x5B);
 	gBankSetsData[0x45]=0x00;
-	//update_CTL_sample_pointers(gSoundDataADSR,gSoundDataRaw);
 	ptrs_to_offsets(gSoundDataADSR);
 	
 	DEBUG_PRINT("ADSR: %p, raw: %p, bs: %p, seq: %p", gSoundDataADSR, gSoundDataRaw, gBankSetsData, gMusicData);
@@ -203,6 +200,7 @@ SM64_LIB_FN void sm64_global_terminate( void )
     s_init_global = false;
     s_init_one_mario = false;
 	   
+	ctl_free();
     alloc_only_pool_free( s_mario_geo_pool );
     surfaces_unload_all();
     unload_mario_anims();

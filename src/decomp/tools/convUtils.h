@@ -20,5 +20,6 @@ struct CTL* parse_ctl_data(unsigned char* ctlData, uintptr_t* pos);
 struct TBL* parse_tbl_data(unsigned char* tbl);
 struct SEQ* parse_seq_data(unsigned char* seq);
 void ptrs_to_offsets(struct seqFile* seqfile);
+void ctl_free();
 #define INITIAL_GFX_ALLOC 10
 #define INITIAL_GEO_ALLOC 10
