@@ -35,8 +35,7 @@ struct seqFile* parse_seqfile(unsigned char* seq){ /* Read SeqFile data */
 
     if (revision == TYPE_CTL){
         // CTL file, contains instrument and drum data, this is really the only one that needs to be parsed, the rest only needs a header change
-        //unsigned char* ctlSeqs = malloc(0x20B40);
-		gCtlSeqs = (unsigned char*)calloc(0x40B40, 1);
+		gCtlSeqs = (unsigned char*)calloc(0x20B40, 1); // We only really need 0x20AD0 bytes but still
 		uintptr_t pos = (uintptr_t)gCtlSeqs;
 		for (int i = 0; i < bankCount; i++){
 			uintptr_t start = pos;
@@ -204,9 +203,9 @@ struct Envelope* parse_envelope(unsigned char* env, uintptr_t* pos, int* size){
 	while(1){
 		unsigned short delay = read_u16_le(env + count * 4);
         unsigned short arg = read_u16_le(env + count * 4 + 2);
-		unsigned short delayC = (-delay) % 0x10000;
+		unsigned short delayC = (-delay);
 		count++;
-        if (1 <= delayC && delayC <= 3)
+        if ((1 <= delayC && delayC <= 3) || delay == 0)
             break;
 	}
 	*size = sizeof(struct Envelope) + sizeof(struct delay_arg) * (count-1);
