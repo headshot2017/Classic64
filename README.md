@@ -1,13 +1,13 @@
 # Classic64
-A plugin for ClassiCube which uses libsm64 to insert a playable Mario from Super Mario 64 into the game.
+A plugin for [ClassiCube](https://classicube.net) which uses libsm64 to insert a playable Mario from Super Mario 64 into the game.
 
 ![Hey stinky](screenshot.png)
 
 This is still a work in progress!
 
-[libsm64 audio fork by ckosmic](https://github.com/ckosmic/libsm64/tree/audio)
-This project was not created by, or is related with the developers of the Minecraft mod "Retro64".
-ClassiCube is a custom Minecraft Classic client written in C.
+[libsm64 audio fork by ckosmic](https://github.com/ckosmic/libsm64/tree/audio)<br/>
+This project was not created by, or is related with the developers of the Minecraft mod "Retro64".<br/>
+[ClassiCube](https://github.com/UnknownShadow200/ClassiCube) is a custom Minecraft Classic client written in C.
 
 ## Compiling the plugin
 Simply run `make`.
