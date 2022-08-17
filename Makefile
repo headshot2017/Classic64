@@ -7,7 +7,7 @@ LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC
 ifeq ($(OS),Windows_NT)
 LDFLAGS := $(LDFLAGS) -mwindows
-ENDFLAGS := -static -lole32 -lstdc++
+ENDFLAGS := -static src/ClassiCube/libClassiCube.a -lole32 -lstdc++
 endif
 
 SRC_DIRS  := src src/decomp src/decomp/engine src/decomp/include/PR src/decomp/game src/decomp/pc src/decomp/pc/audio src/decomp/mario src/decomp/tools src/decomp/audio
@@ -15,7 +15,7 @@ BUILD_DIR := build
 DIST_DIR  := dist
 ALL_DIRS  := $(addprefix $(BUILD_DIR)/,$(SRC_DIRS))
 
-LIB_FILE   := $(DIST_DIR)/libsm64.so
+LIB_FILE   := $(DIST_DIR)/libClassic64.so
 LIB_H_FILE := $(DIST_DIR)/include/libsm64.h
 TEST_FILE  := run-test
 
@@ -32,7 +32,7 @@ TEST_OBJS := $(foreach file,$(TEST_SRCS),$(BUILD_DIR)/$(file:.c=.o))
 
 ifeq ($(OS),Windows_NT)
   TEST_FILE := $(DIST_DIR)/$(TEST_FILE)
-  LIB_FILE := $(DIST_DIR)/sm64.dll
+  LIB_FILE := $(DIST_DIR)/Classic64.dll
 endif
 
 DUMMY != mkdir -p $(ALL_DIRS) build/test src/decomp/mario $(DIST_DIR)/include 
@@ -52,10 +52,6 @@ $(LIB_FILE): $(O_FILES)
 $(LIB_H_FILE): src/libsm64.h
 	cp -f $< $@
 
-
-test/level.c test/level.h: ./import-test-collision.py
-	./import-test-collision.py
-
 test/main.c: test/level.h
 
 $(BUILD_DIR)/test/%.o: test/%.c
@@ -68,7 +64,7 @@ endif
 
 $(TEST_FILE): $(LIB_FILE) $(TEST_OBJS)
 ifeq ($(OS),Windows_NT)
-	$(CC) -o $@ $(TEST_OBJS) $(LIB_FILE) `sdl2-config --cflags --libs` -lglew32 -lglu32 -lopengl32 -lSDL2 -lSDL2main -lm
+	$(CC) -o $@ $(TEST_OBJS) $(LIB_FILE) -lglew32 -lglu32 -lopengl32 -lSDL2 -lSDL2main -lm
 else
 	$(CC) -o $@ $(TEST_OBJS) $(LIB_FILE) -lGLEW -lGL -lSDL2 -lSDL2main -lm
 endif
