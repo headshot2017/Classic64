@@ -8,9 +8,11 @@
 #include <time.h>
 
 #include "../src/libsm64.h"
+#include "../src/decomp/include/seq_ids.h"
+
+#define SDL_MAIN_HANDLED
 
 #include "cglm.h"
-#include "ns_clock.h"
 #include "level.h"
 #include "context.h"
 
@@ -310,13 +312,13 @@ static void update_mario_mesh( MarioMesh *mesh, struct SM64MarioGeometryBuffers 
     mesh->num_vertices = 3 * marioGeo->numTrianglesUsed;
 
     glBindBuffer( GL_ARRAY_BUFFER, mesh->position_buffer );
-    glBufferData( GL_ARRAY_BUFFER, sizeof( vec3 ) * 3 * SM64_GEO_MAX_TRIANGLES, marioGeo->position, GL_DYNAMIC_DRAW );
+    glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vec3 ) * 3 * SM64_GEO_MAX_TRIANGLES, marioGeo->position);
     glBindBuffer( GL_ARRAY_BUFFER, mesh->normal_buffer );
-    glBufferData( GL_ARRAY_BUFFER, sizeof( vec3 ) * 3 * SM64_GEO_MAX_TRIANGLES, marioGeo->normal, GL_DYNAMIC_DRAW );
+    glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vec3 ) * 3 * SM64_GEO_MAX_TRIANGLES, marioGeo->normal);
     glBindBuffer( GL_ARRAY_BUFFER, mesh->color_buffer );
-    glBufferData( GL_ARRAY_BUFFER, sizeof( vec3 ) * 3 * SM64_GEO_MAX_TRIANGLES, marioGeo->color, GL_DYNAMIC_DRAW );
+    glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vec3 ) * 3 * SM64_GEO_MAX_TRIANGLES, marioGeo->color);
     glBindBuffer( GL_ARRAY_BUFFER, mesh->uv_buffer );
-    glBufferData( GL_ARRAY_BUFFER, sizeof( vec2 ) * 3 * SM64_GEO_MAX_TRIANGLES, marioGeo->uv, GL_DYNAMIC_DRAW );
+    glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vec2 ) * 3 * SM64_GEO_MAX_TRIANGLES, marioGeo->uv);
 }
 
 void render_state_init( RenderState *renderState, uint8_t *marioTexture )
@@ -395,7 +397,7 @@ int main( void )
     sm64_global_terminate();
     sm64_global_init( rom, texture, NULL );
     sm64_static_surfaces_load( surfaces, surfaces_count );
-    uint32_t marioId = sm64_mario_create( 0, 1000, 0 );
+    uint32_t marioId = sm64_mario_create( spawn[0], spawn[1], spawn[2], 0, 0, 0, 0 );
 
     free( rom );
 
@@ -407,10 +409,6 @@ int main( void )
     context_init( "libsm64", WINDOW_WIDTH, WINDOW_HEIGHT );
     render_state_init( &renderState, texture );
 
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = 0;
-
     struct SM64MarioInputs marioInputs;
     struct SM64MarioState marioState;
     struct SM64MarioGeometryBuffers marioGeometry;
@@ -420,34 +418,95 @@ int main( void )
     marioGeometry.normal   = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
     marioGeometry.uv       = malloc( sizeof(float) * 6 * SM64_GEO_MAX_TRIANGLES );
 
+	sm64_play_music(0, ((0 << 8) | SEQ_LEVEL_UNDERGROUND), 0);
+
     do
     {
-        uint64_t frameTopTime = ns_clock();
+		Uint64 start = SDL_GetPerformanceCounter();
 
+		/*
         SDL_GameController *controller = context_get_controller();
         float x_axis = read_axis( SDL_GameControllerGetAxis( controller, SDL_CONTROLLER_AXIS_LEFTX ));
         float y_axis = read_axis( SDL_GameControllerGetAxis( controller, SDL_CONTROLLER_AXIS_LEFTY ));
-        float x0_axis = read_axis( SDL_GameControllerGetAxis( controller, SDL_CONTROLLER_AXIS_RIGHTX ));
+        float x0_axis = read_axis( SDL_GameControllerGetAxis( controller, SDL_CONTROLLER_AXIS_RIGHTX ));*/
+
+		const Uint8* state = SDL_GetKeyboardState(NULL);
+
+		float x0_axis = state[SDL_SCANCODE_LSHIFT] ? 1 : state[SDL_SCANCODE_RSHIFT] ? -1 : 0;
+
+		float dir;
+		float spd = 0;
+		if (state[SDL_SCANCODE_UP] && state[SDL_SCANCODE_RIGHT])
+		{
+			dir = -M_PI * 0.25f;
+			spd = 1;
+		}
+		else if (state[SDL_SCANCODE_UP] && state[SDL_SCANCODE_LEFT])
+		{
+			dir = -M_PI * 0.75f;
+			spd = 1;
+		}
+		else if (state[SDL_SCANCODE_DOWN] && state[SDL_SCANCODE_RIGHT])
+		{
+			dir = M_PI * 0.25f;
+			spd = 1;
+		}
+		else if (state[SDL_SCANCODE_DOWN] && state[SDL_SCANCODE_LEFT])
+		{
+			dir = M_PI * 0.75f;
+			spd = 1;
+		}
+		else if (state[SDL_SCANCODE_UP])
+		{
+			dir = -M_PI * 0.5f;
+			spd = 1;
+		}
+		else if (state[SDL_SCANCODE_DOWN])
+		{
+			dir = M_PI * 0.5f;
+			spd = 1;
+		}
+		else if (state[SDL_SCANCODE_LEFT])
+		{
+			dir = M_PI;
+			spd = 1;
+		}
+		else if (state[SDL_SCANCODE_RIGHT])
+		{
+			dir = 0;
+			spd = 1;
+		}
 
         cameraRot += 0.1f * x0_axis;
         cameraPos[0] = marioState.position[0] + 1000.0f * cosf( cameraRot );
         cameraPos[1] = marioState.position[1] + 200.0f;
         cameraPos[2] = marioState.position[2] + 1000.0f * sinf( cameraRot );
 
+		/*
         marioInputs.buttonA = SDL_GameControllerGetButton( controller, 0 );
         marioInputs.buttonB = SDL_GameControllerGetButton( controller, 2 );
         marioInputs.buttonZ = SDL_GameControllerGetButton( controller, 9 );
+		*/
+		marioInputs.buttonA = state[SDL_SCANCODE_X];
+        marioInputs.buttonB = state[SDL_SCANCODE_C];
+        marioInputs.buttonZ = state[SDL_SCANCODE_Z];
+
         marioInputs.camLookX = marioState.position[0] - cameraPos[0];
         marioInputs.camLookZ = marioState.position[2] - cameraPos[2];
-        marioInputs.stickX = x_axis;
-        marioInputs.stickY = y_axis;
+        //marioInputs.stickX = x_axis;
+        //marioInputs.stickY = y_axis;
+		marioInputs.stickX = spd * cosf(dir);
+		marioInputs.stickY = spd * sinf(dir);
 
         sm64_mario_tick( marioId, &marioInputs, &marioState, &marioGeometry );
 
         render_draw( &renderState, cameraPos, &marioState, &marioGeometry );
 
-        ts.tv_nsec = 33333333 - (ns_clock() - frameTopTime);
-        nanosleep( &ts, &ts );
+		printf("%.2f %.2f %.2f\n", marioState.position[0], marioState.position[1], marioState.position[2]);
+
+		Uint64 end = SDL_GetPerformanceCounter();
+		float elapsed = (end-start) / (float)SDL_GetPerformanceCounter() * 1000;
+		SDL_Delay((1.f/30*1000) - elapsed);
     }
     while( context_flip_frame_poll_events() );
 
