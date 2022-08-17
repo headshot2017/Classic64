@@ -9,7 +9,7 @@
 #include "decomp/tools/n64graphics.h"
 
 #define MARIO_TEX_ROM_OFFSET 1132368
-#define ATLAS_WIDTH (NUM_USED_TEXTURES * 64)
+#define ATLAS_WIDTH (16 * 64)
 #define ATLAS_HEIGHT 64
 
 static void blt_image_to_atlas( rgba *img, int i, int w, int h, uint8_t *outTexture )
