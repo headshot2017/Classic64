@@ -10,7 +10,8 @@ This project was not created by, or is related with the developers of the Minecr
 [ClassiCube](https://github.com/UnknownShadow200/ClassiCube) is a custom Minecraft Classic client written in C.
 
 ## Compiling the plugin
-Simply run `make`.
+Download the [MSYS2](https://msys2.org/#installation) development environment, launch MSYS2 MinGW x64 and install gcc, g++ and make.
+Finally, run `make`.
 
 A folder named "dist" will be created and inside will sit the plugin dll file "Classic64.dll".
 Copy this to your ClassiCube plugins folder.
