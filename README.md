@@ -1,7 +1,7 @@
 # Classic64
 A plugin for ClassiCube which uses libsm64 to insert a playable Mario from Super Mario 64 into the game.
 
-[Hey stinky](screenshot.png)
+![Hey stinky](screenshot.png)
 
 This is still a work in progress!
 
