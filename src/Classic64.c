@@ -26,6 +26,7 @@
 #include "ClassiCube/Camera.h"
 #include "ClassiCube/Chat.h"
 #include "ClassiCube/Entity.h"
+#include "ClassiCube/Event.h"
 #include "ClassiCube/ExtMath.h"
 #include "ClassiCube/Game.h"
 #include "ClassiCube/Graphics.h"
@@ -33,6 +34,7 @@
 #include "ClassiCube/Input.h"
 #include "ClassiCube/Lighting.h"
 #include "ClassiCube/Model.h"
+#include "ClassiCube/Protocol.h"
 #include "ClassiCube/Server.h"
 #include "ClassiCube/String.h"
 #include "ClassiCube/Window.h"
@@ -60,6 +62,7 @@ static struct _EntitiesData* Entities_;
 static struct _CameraData* Camera_;
 static struct _GuiData* Gui_;
 static struct _Lighting* Lighting_;
+static struct _ChatEventsList* ChatEvents_;
 
 // plugin settings
 enum
@@ -206,6 +209,11 @@ static struct Model* marioModel_GetInstance(void) {
 	mario_model.usesHumanSkin = true; // without this, the game crashes in first person view with nothing held in hand
 	mario_model.bobbing = false;
 	return &mario_model;
+}
+
+void OnChatMessage(void* obj, const cc_string* msg, int msgType)
+{
+	
 }
 
 // chat command
@@ -881,6 +889,7 @@ static void Classic64_Init()
 	String_AppendConst(&Server_->AppName, " + Classic64 Mario 64 WIP");
 
 	Model_Register(marioModel_GetInstance());
+	Event_Register_(&ChatEvents_->ChatReceived, NULL, OnChatMessage);
 
 	ScheduledTask_Add(1./30, marioTick);
 	ScheduledTask_Add(1./300, selfMarioTick);
@@ -985,4 +994,5 @@ static void LoadSymbolsFromGame(void) {
 	LoadSymbol(Camera);
 	LoadSymbol(Gui);
 	LoadSymbol(Lighting);
+	LoadSymbol(ChatEvents);
 }
