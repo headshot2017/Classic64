@@ -32,6 +32,12 @@ To turn into Mario, run the command `/model mario64`. This will let everyone on 
 
 If you are on a server with hacks enabled (flying, speed, etc) but the "/model" command is not allowed, you can run the client-side command `/client mario64 force`, at the cost that nobody will see your Mario model.
 
+## Known issues
+* Going fullscreen on Direct3D9 builds of ClassiCube with this plugin will crash the game. "Error recreating D3D9 context"
+* If the game crashes on start:
+  * Make sure the ROM matches the SHA-1 checksum: `9bef1128717f958171a4afac3ed78ee2bb4e86ce`
+  * Try playing with the ClassiCube dev builds. At the moment it crashes on release builds. (Click Options, then select Updates, then select one of the dev builds.)
+
 ## Client-side commands
 All client-side commands start with `/client mario64`
 
