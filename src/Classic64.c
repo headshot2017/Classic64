@@ -136,48 +136,56 @@ void loadSettings()
 
 // mario variables
 uint8_t *marioTextureUint8;
-/*
-struct MarioInstance
+
+struct MarioInstance // represents a Mario object in the plugin
 {
 	int32_t ID;
-	uint32_t objs[9*3];
+	uint32_t surfaces[9*3];
 	Vec3 lastPos;
 
-	struct SM64MarioInputs inputs;
+	struct SM64MarioInputs input;
 	struct SM64MarioState state;
 	struct SM64MarioGeometryBuffers geometry;
+
+	struct VertexTextured vertices[4 * SM64_GEO_MAX_TRIANGLES];
+	struct VertexTextured texturedVertices[4 * SM64_GEO_MAX_TRIANGLES];
+	GfxResourceID vertexID;
+	GfxResourceID texturedVertexID;
+	uint16_t numTexturedTriangles;
 } *marioInstances[256];
-*/
-uint32_t marioObjs[256][9*3]; // sm64_surface_object_create()
-int32_t marioIds[256];
-Vec3 lastPos[256];
+
+//uint32_t marioObjs[256][9*3]; // sm64_surface_object_create()
+//int32_t marioIds[256];
+//Vec3 lastPos[256];
 int ticksBeforeSpawn;
 bool inited;
 bool allowTick; // false when loading world
-struct SM64MarioInputs marioInputs;
-struct SM64MarioState marioState;
-struct SM64MarioGeometryBuffers marioGeometry;
+//struct SM64MarioInputs marioInputs;
+//struct SM64MarioState marioState;
+//struct SM64MarioGeometryBuffers marioGeometry;
 
 // mario's model (the hard part)
 static struct Bitmap marioBitmap = {0, 1024, SM64_TEXTURE_HEIGHT};
-struct VertexTextured marioVertices[4 * SM64_GEO_MAX_TRIANGLES];
-struct VertexTextured marioTexturedVertices[4 * SM64_GEO_MAX_TRIANGLES];
 GfxResourceID marioTextureID;
-GfxResourceID marioVertexID;
-GfxResourceID marioTexturedVertexID;
-uint16_t numTexturedTriangles;
 
 static void marioModel_Draw(struct Entity* p)
 {
-	Gfx_BindTexture(marioTextureID);
+	for (int i=0; i<256; i++)
+	{
+		if (Entities_->List[i] && Entities_->List[i] == p && marioInstances[i])
+		{
+			struct MarioInstance *obj = marioInstances[i];
+			Gfx_BindTexture(marioTextureID);
 
-	// draw colored triangles first (can't use VERTEX_FORMAT_COLOURED with VertexColoured structs because that crashes randomly)
-	Gfx_BindVb(marioVertexID);
-	Gfx_DrawVb_IndexedTris(4 * marioGeometry.numTrianglesUsed);
+			// draw colored triangles first (can't use VERTEX_FORMAT_COLOURED with VertexColoured structs because that crashes randomly)
+			Gfx_BindVb(obj->vertexID);
+			Gfx_DrawVb_IndexedTris(4 * obj->geometry.numTrianglesUsed);
 
-	// draw textured triangles next (eyes, mustache, etc)
-	Gfx_BindVb(marioTexturedVertexID);
-	Gfx_DrawVb_IndexedTris(4 * numTexturedTriangles);
+			// draw textured triangles next (eyes, mustache, etc)
+			Gfx_BindVb(obj->texturedVertexID);
+			Gfx_DrawVb_IndexedTris(4 * obj->numTexturedTriangles);
+		}
+	}
 }
 
 static void marioModel_GetTransform(struct Entity* entity, Vec3 pos, struct Matrix* m)
@@ -190,9 +198,9 @@ static void marioModel_GetTransform(struct Entity* entity, Vec3 pos, struct Matr
 
 static void marioModel_DrawArm(struct Entity* entity) {}
 static void marioModel_MakeParts(void) {}
-static float marioModel_GetNameY(struct Entity* e) { return 28/16.0f; }
+static float marioModel_GetNameY(struct Entity* e) { return 1+0.25f; }
 static float marioModel_GetEyeY(struct Entity* e)  { return 1; }
-static void marioModel_GetSize(struct Entity* e) {e->Size = (Vec3) { 1, 1, 1 };}
+static void marioModel_GetSize(struct Entity* e) {e->Size = (Vec3) { 0.5f, 1, 0.5f };}
 static void marioModel_GetBounds(struct Entity* e) {e->ModelAABB = (struct AABB) { 0, 0, 0, 0, 0, 0 };}
 static struct ModelVertex mario_unused_vertices[1]; // without this, the game crashes in first person view with nothing held in hand
 static struct Model mario_model = { "mario64", mario_unused_vertices, NULL,
@@ -267,7 +275,7 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 			return;
 		}
 
-		if (marioIds[ENTITIES_SELF_ID] == -1)
+		if (!marioInstances[ENTITIES_SELF_ID])
 		{
 			SendChat("&cSwitch to Mario first", NULL, NULL, NULL);
 			return;
@@ -287,8 +295,8 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 		{
 			if (String_Compare(&args[1], &caps[i].name) == 0)
 			{
-				sm64_set_mario_state(marioIds[ENTITIES_SELF_ID], 0);
-				sm64_mario_interact_cap(marioIds[ENTITIES_SELF_ID], caps[i].capFlag, 65535, 0);
+				sm64_set_mario_state(marioInstances[ENTITIES_SELF_ID]->ID, 0);
+				sm64_mario_interact_cap(marioInstances[ENTITIES_SELF_ID]->ID, caps[i].capFlag, 65535, 0);
 				return;
 			}
 		}
@@ -297,12 +305,12 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 	}
 	else if (String_Compare(&args[0], &options[2]) == 0) // kill mario
 	{
-		if (marioIds[ENTITIES_SELF_ID] == -1)
+		if (!marioInstances[ENTITIES_SELF_ID])
 		{
 			SendChat("&cSwitch to Mario first", NULL, NULL, NULL);
 			return;
 		}
-		sm64_mario_kill(marioIds[ENTITIES_SELF_ID]);
+		sm64_mario_kill(marioInstances[ENTITIES_SELF_ID]->ID);
 		return;
 	}
 	else if (String_Compare(&args[0], &options[3]) == 0) // force-switch to mario
@@ -382,17 +390,40 @@ static struct ChatCommand MarioClientCmd = {
 };
 
 // mario functions
-void loadNewBlocks(int i, int x, int y, int z)
+void deleteBlocks(uint32_t *arrayTarget) // specify arrayTarget because the blocks need to be created before mario can be spawned
 {
-	int j;
-	for (j=0; j<9*3; j++)
+	for (int j=0; j<9*3; j++)
 	{
-		if (marioObjs[i][j] == -1) continue;
-		sm64_surface_object_delete(marioObjs[i][j]);
-		marioObjs[i][j] = -1;
+		if (arrayTarget[j] == -1) continue;
+		sm64_surface_object_delete(arrayTarget[j]);
+		arrayTarget[j] = -1;
 	}
+}
 
-	j = 0;
+void deleteMario(int i)
+{
+	if (!marioInstances[i]) return;
+	struct MarioInstance *obj = marioInstances[i];
+
+	deleteBlocks(obj->surfaces);
+	sm64_mario_delete(obj->ID);
+
+	free(obj->geometry.position);
+	free(obj->geometry.color);
+	free(obj->geometry.normal);
+	free(obj->geometry.uv);
+	Gfx_DeleteDynamicVb(obj->vertexID);
+	Gfx_DeleteDynamicVb(obj->texturedVertexID);
+
+	free(marioInstances[i]);
+	marioInstances[i] = 0;
+}
+
+void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify arrayTarget because the blocks need to be created before mario can be spawned
+{
+	deleteBlocks(arrayTarget);
+
+	int j = 0;
 	for (int zadd=-1; zadd<=1; zadd++)
 	{
 		for (int xadd=-1; xadd<=1; xadd++)
@@ -492,7 +523,7 @@ void loadNewBlocks(int i, int x, int y, int z)
 				obj.surfaces[11].vertices[1][0] = IMARIO_SCALE; obj.surfaces[11].vertices[1][1] = 0; obj.surfaces[11].vertices[1][2] = IMARIO_SCALE;
 				obj.surfaces[11].vertices[2][0] = 0; obj.surfaces[11].vertices[2][1] = 0; obj.surfaces[11].vertices[2][2] = 0;
 
-				marioObjs[i][j++] = sm64_surface_object_create(&obj);
+				arrayTarget[j++] = sm64_surface_object_create(&obj);
 				free(obj.surfaces);
 			}
 
@@ -594,7 +625,7 @@ void loadNewBlocks(int i, int x, int y, int z)
 			obj.surfaces[11].vertices[1][0] = IMARIO_SCALE; obj.surfaces[11].vertices[1][1] = 0; obj.surfaces[11].vertices[1][2] = IMARIO_SCALE;
 			obj.surfaces[11].vertices[2][0] = 0; obj.surfaces[11].vertices[2][1] = 0; obj.surfaces[11].vertices[2][2] = 0;
 
-			marioObjs[i][j++] = sm64_surface_object_create(&obj);
+			arrayTarget[j++] = sm64_surface_object_create(&obj);
 			free(obj.surfaces);
 		}
 	}
@@ -607,103 +638,118 @@ void marioTick(struct ScheduledTask* task)
 	for (int i=0; i<256; i++)
 	{
 		if (!Entities_->List[i]) continue;
-		if (marioIds[i] == -1 && ticksBeforeSpawn <= 0 && strcmp(Entities_->List[i]->Model->name, "mario64") == 0)
+		if (!marioInstances[i] && ticksBeforeSpawn <= 0 && strcmp(Entities_->List[i]->Model->name, "mario64") == 0)
 		{
-			// spawn mario
-			loadNewBlocks(i, Entities_->List[i]->Position.X, Entities_->List[i]->Position.Y, Entities_->List[i]->Position.Z);
-			marioIds[i] = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, 0,0,0,0);
-			if (marioIds[i] == -1)
+			// spawn mario. have some temporary variables for the surface IDs and mario ID
+			uint32_t surfaces[9*3];
+			memset(surfaces, -1, sizeof(surfaces));
+			loadNewBlocks(i, Entities_->List[i]->Position.X, Entities_->List[i]->Position.Y, Entities_->List[i]->Position.Z, surfaces);
+			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, 0,0,0,0);
+			if (ID == -1)
 			{
 				SendChat("&cFailed to spawn Mario", NULL, NULL, NULL);
 			}
 			else
 			{
-				lastPos[i].X = Entities_->List[i]->Position.X*IMARIO_SCALE;
-				lastPos[i].Y = Entities_->List[i]->Position.Y*IMARIO_SCALE;
-				lastPos[i].Z = Entities_->List[i]->Position.Z*IMARIO_SCALE;
+				// mario was spawned, intialize the instance struct and put everything in there
+				marioInstances[i] = (struct MarioInstance*)malloc(sizeof(struct MarioInstance));
+				marioInstances[i]->ID = ID;
+				memcpy(&marioInstances[i]->surfaces, surfaces, sizeof(surfaces));
+				marioInstances[i]->lastPos.X = Entities_->List[i]->Position.X*IMARIO_SCALE;
+				marioInstances[i]->lastPos.Y = Entities_->List[i]->Position.Y*IMARIO_SCALE;
+				marioInstances[i]->lastPos.Z = Entities_->List[i]->Position.Z*IMARIO_SCALE;
+				memset(&marioInstances[i]->input, 0, sizeof(struct SM64MarioInputs));
+				marioInstances[i]->geometry.position = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
+				marioInstances[i]->geometry.color    = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
+				marioInstances[i]->geometry.normal   = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
+				marioInstances[i]->geometry.uv       = malloc( sizeof(float) * 6 * SM64_GEO_MAX_TRIANGLES );
+				marioInstances[i]->vertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
+				marioInstances[i]->texturedVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
+				marioInstances[i]->numTexturedTriangles = 0;
 			}
 		}
-		else if (marioIds[i] != -1)
+		else if (marioInstances[i])
 		{
+			struct MarioInstance *obj = marioInstances[i];
 			if (strcmp(Entities_->List[i]->Model->name, "mario64"))
 			{
-				sm64_mario_delete(marioIds[i]);
-				marioIds[i] = -1;
+				// no longer mario, delete from memory
+				deleteMario(i);
 				continue;
 			}
 
-			if (i != ENTITIES_SELF_ID) sm64_set_mario_position(marioIds[i], Entities_->List[ENTITIES_SELF_ID]->Position.X, Entities_->List[ENTITIES_SELF_ID]->Position.Y, Entities_->List[ENTITIES_SELF_ID]->Position.Z);
-			else if (!pluginOptions[PLUGINOPTION_HURT].value && sm64_mario_get_health(marioIds[i]) != 0xff) sm64_mario_set_health(marioIds[i], 0x880);
-
-			if (marioState.position[0] != 0 && marioState.position[1] != 0 && marioState.position[2] != 0)
+			if (obj->state.position[0] != 0 && obj->state.position[1] != 0 && obj->state.position[2] != 0)
 			{
-				lastPos[i].X = marioState.position[0]; lastPos[i].Y = marioState.position[1]; lastPos[i].Z = marioState.position[2];
+				obj->lastPos.X = obj->state.position[0]; obj->lastPos.Y = obj->state.position[1]; obj->lastPos.Z = obj->state.position[2];
 			}
+
+			//if (i != ENTITIES_SELF_ID) sm64_set_mario_position(obj->ID, Entities_->List[ENTITIES_SELF_ID]->Position.X, Entities_->List[ENTITIES_SELF_ID]->Position.Y, Entities_->List[ENTITIES_SELF_ID]->Position.Z);
+			if (!pluginOptions[PLUGINOPTION_HURT].value && sm64_mario_get_health(obj->ID) != 0xff) sm64_mario_set_health(obj->ID, 0x880);
 
 			// water
 			int yadd = 0;
 			int waterY = -1024;
-			while (marioState.position[1]/MARIO_SCALE+yadd > waterY && Blocks_->IsLiquid[World_GetBlock(marioState.position[0]/MARIO_SCALE, marioState.position[1]/MARIO_SCALE+yadd, marioState.position[2]/MARIO_SCALE)])
+			while (obj->state.position[1]/MARIO_SCALE+yadd > waterY && Blocks_->IsLiquid[World_GetBlock(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE+yadd, obj->state.position[2]/MARIO_SCALE)])
 			{
-				waterY = marioState.position[1]/MARIO_SCALE+yadd;
+				waterY = obj->state.position[1]/MARIO_SCALE+yadd;
 				yadd++;
 			}
-			sm64_set_mario_water_level(marioIds[i], waterY*IMARIO_SCALE+IMARIO_SCALE);
+			sm64_set_mario_water_level(obj->ID, waterY*IMARIO_SCALE+IMARIO_SCALE);
 
-			sm64_mario_tick(marioIds[i], &marioInputs, &marioState, &marioGeometry);
+			sm64_mario_tick(obj->ID, &obj->input, &obj->state, &obj->geometry);
 
-			numTexturedTriangles = 0;
+			obj->numTexturedTriangles = 0;
 			bool bgr = (pluginOptions[PLUGINOPTION_BGR].value);
-			for (int i=0; i<marioGeometry.numTrianglesUsed; i++)
+			for (int i=0; i<obj->geometry.numTrianglesUsed; i++)
 			{
-				bool hasTexture = (marioGeometry.uv[i*6+0] != 1 && marioGeometry.uv[i*6+1] != 1 && marioGeometry.uv[i*6+2] != 1 && marioGeometry.uv[i*6+3] != 1 && marioGeometry.uv[i*6+4] != 1 && marioGeometry.uv[i*6+5] != 1);
-				bool wingCap = (marioState.flags & MARIO_WING_CAP && i >= marioGeometry.numTrianglesUsed-8 && i <= marioGeometry.numTrianglesUsed-1); // do not draw white rectangles around wingcap
+				bool hasTexture = (obj->geometry.uv[i*6+0] != 1 && obj->geometry.uv[i*6+1] != 1 && obj->geometry.uv[i*6+2] != 1 && obj->geometry.uv[i*6+3] != 1 && obj->geometry.uv[i*6+4] != 1 && obj->geometry.uv[i*6+5] != 1);
+				bool wingCap = (obj->state.flags & MARIO_WING_CAP && i >= obj->geometry.numTrianglesUsed-8 && i <= obj->geometry.numTrianglesUsed-1); // do not draw white rectangles around wingcap
 
-				marioVertices[i*4+0] = (struct VertexTextured) {
-					(marioGeometry.position[i*9+0] - marioState.position[0]) / MARIO_SCALE,
-					(marioGeometry.position[i*9+1] - marioState.position[1]) / MARIO_SCALE,
-					(marioGeometry.position[i*9+2] - marioState.position[2]) / MARIO_SCALE,
-					PackedCol_Tint(PackedCol_Make(marioGeometry.color[i*9 + (bgr?2:0)]*255, marioGeometry.color[i*9+1]*255, marioGeometry.color[i*9 + (bgr?0:2)]*255, 255), Lighting_->Color(marioState.position[0]/MARIO_SCALE, marioState.position[1]/MARIO_SCALE, marioState.position[2]/MARIO_SCALE)),
+				obj->vertices[i*4+0] = (struct VertexTextured) {
+					(obj->geometry.position[i*9+0] - obj->state.position[0]) / MARIO_SCALE,
+					(obj->geometry.position[i*9+1] - obj->state.position[1]) / MARIO_SCALE,
+					(obj->geometry.position[i*9+2] - obj->state.position[2]) / MARIO_SCALE,
+					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?2:0)]*255, obj->geometry.color[i*9+1]*255, obj->geometry.color[i*9 + (bgr?0:2)]*255, 255), Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE)),
 					(wingCap) ? 0 : 0.95, (wingCap) ? 0.95 : 0
 				};
 
-				marioVertices[i*4+1] = (struct VertexTextured) {
-					(marioGeometry.position[i*9+3] - marioState.position[0]) / MARIO_SCALE,
-					(marioGeometry.position[i*9+4] - marioState.position[1]) / MARIO_SCALE,
-					(marioGeometry.position[i*9+5] - marioState.position[2]) / MARIO_SCALE,
-					PackedCol_Tint(PackedCol_Make(marioGeometry.color[i*9 + (bgr?5:3)]*255, marioGeometry.color[i*9+4]*255, marioGeometry.color[i*9 + (bgr?3:5)]*255, 255), Lighting_->Color(marioState.position[0]/MARIO_SCALE, marioState.position[1]/MARIO_SCALE, marioState.position[2]/MARIO_SCALE)),
+				obj->vertices[i*4+1] = (struct VertexTextured) {
+					(obj->geometry.position[i*9+3] - obj->state.position[0]) / MARIO_SCALE,
+					(obj->geometry.position[i*9+4] - obj->state.position[1]) / MARIO_SCALE,
+					(obj->geometry.position[i*9+5] - obj->state.position[2]) / MARIO_SCALE,
+					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?5:3)]*255, obj->geometry.color[i*9+4]*255, obj->geometry.color[i*9 + (bgr?3:5)]*255, 255), Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE)),
 					(wingCap) ? 0 : 0.96, (wingCap) ? 0.96 : 0
 				};
 
-				marioVertices[i*4+2] = (struct VertexTextured) {
-					(marioGeometry.position[i*9+6] - marioState.position[0]) / MARIO_SCALE,
-					(marioGeometry.position[i*9+7] - marioState.position[1]) / MARIO_SCALE,
-					(marioGeometry.position[i*9+8] - marioState.position[2]) / MARIO_SCALE,
-					PackedCol_Tint(PackedCol_Make(marioGeometry.color[i*9 + (bgr?8:6)]*255, marioGeometry.color[i*9+7]*255, marioGeometry.color[i*9 + (bgr?6:8)]*255, 255), Lighting_->Color(marioState.position[0]/MARIO_SCALE, marioState.position[1]/MARIO_SCALE, marioState.position[2]/MARIO_SCALE)),
+				obj->vertices[i*4+2] = (struct VertexTextured) {
+					(obj->geometry.position[i*9+6] - obj->state.position[0]) / MARIO_SCALE,
+					(obj->geometry.position[i*9+7] - obj->state.position[1]) / MARIO_SCALE,
+					(obj->geometry.position[i*9+8] - obj->state.position[2]) / MARIO_SCALE,
+					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?8:6)]*255, obj->geometry.color[i*9+7]*255, obj->geometry.color[i*9 + (bgr?6:8)]*255, 255), Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE)),
 					(wingCap) ? 0.01 : 0.96, (wingCap) ? 0.96 : 1
 				};
 
-				marioVertices[i*4+3] = marioVertices[i*4+2]; // WHY IS IT A QUAD?!?!?!?!? why does classicube use quads!??!?!??
+				obj->vertices[i*4+3] = obj->vertices[i*4+2]; // WHY IS IT A QUAD?!?!?!?!? why does classicube use quads!??!?!??
 
 				if (hasTexture)
 				{
 					for (int j=0; j<4; j++)
 					{
-						marioTexturedVertices[numTexturedTriangles*4+j] = (struct VertexTextured) {
-							marioVertices[i*4+j].X, marioVertices[i*4+j].Y, marioVertices[i*4+j].Z,
-							PackedCol_Tint(PACKEDCOL_WHITE, Lighting_->Color(marioState.position[0]/MARIO_SCALE, marioState.position[1]/MARIO_SCALE, marioState.position[2]/MARIO_SCALE)),
-							marioGeometry.uv[i*6+(j*2+0)], marioGeometry.uv[i*6+(j*2+1)]
+						obj->texturedVertices[obj->numTexturedTriangles*4+j] = (struct VertexTextured) {
+							obj->vertices[i*4+j].X, obj->vertices[i*4+j].Y, obj->vertices[i*4+j].Z,
+							PackedCol_Tint(PACKEDCOL_WHITE, Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE)),
+							obj->geometry.uv[i*6+(j*2+0)], obj->geometry.uv[i*6+(j*2+1)]
 						};
 					}
-					numTexturedTriangles++;
+					obj->numTexturedTriangles++;
 				}
 			}
-			Gfx_SetDynamicVbData(marioVertexID, &marioVertices, 4 * SM64_GEO_MAX_TRIANGLES);
-			Gfx_SetDynamicVbData(marioTexturedVertexID, &marioTexturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
+			Gfx_SetDynamicVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
+			Gfx_SetDynamicVbData(obj->texturedVertexID, &obj->texturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
 
-			if ((int)(lastPos[i].X) != (int)(marioState.position[0]) || (int)(lastPos[i].Y) != (int)(marioState.position[1]) || (int)(lastPos[i].Z) != (int)(marioState.position[2]))
+			if ((int)(obj->lastPos.X) != (int)(obj->state.position[0]) || (int)(obj->lastPos.Y) != (int)(obj->state.position[1]) || (int)(obj->lastPos.Z) != (int)(obj->state.position[2]))
 			{
-				loadNewBlocks(i, marioState.position[0]/MARIO_SCALE, marioState.position[1]/MARIO_SCALE, marioState.position[2]/MARIO_SCALE);
+				loadNewBlocks(i, obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE, obj->surfaces);
 			}
 		}
 	}
@@ -713,27 +759,28 @@ void marioTick(struct ScheduledTask* task)
 
 void selfMarioTick(struct ScheduledTask* task)
 {
-	if (marioIds[ENTITIES_SELF_ID] == -1) return;
+	if (!marioInstances[ENTITIES_SELF_ID]) return;
+	struct MarioInstance *obj = marioInstances[ENTITIES_SELF_ID];
 
 	struct LocationUpdate update = {0};
 	update.Flags = LOCATIONUPDATE_POS;
-	update.Pos.X = marioState.position[0] / MARIO_SCALE;
-	update.Pos.Y = marioState.position[1] / MARIO_SCALE;
-	update.Pos.Z = marioState.position[2] / MARIO_SCALE;
+	update.Pos.X = obj->state.position[0] / MARIO_SCALE;
+	update.Pos.Y = obj->state.position[1] / MARIO_SCALE;
+	update.Pos.Z = obj->state.position[2] / MARIO_SCALE;
 	update.RelativePos = false;
 	if (pluginOptions[PLUGINOPTION_CAMERA].value)
 	{
 		static float currYaw = 0;
 		currYaw = Entities_->List[ENTITIES_SELF_ID]->Yaw;
-		float diffYaw = ((-marioState.faceAngle + MATH_PI) * MATH_RAD2DEG) - Entities_->List[ENTITIES_SELF_ID]->Yaw;
+		float diffYaw = ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG) - Entities_->List[ENTITIES_SELF_ID]->Yaw;
 		if (abs(diffYaw) >= 180)
 		{
 			currYaw = diffYaw;
-			diffYaw = ((-marioState.faceAngle + MATH_PI) * MATH_RAD2DEG) - currYaw;
+			diffYaw = ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG) - currYaw;
 		}
 		currYaw += diffYaw*0.05f;
 		update.Flags |= LOCATIONUPDATE_YAW;
-		update.Yaw = ((-marioState.faceAngle + MATH_PI) * MATH_RAD2DEG); // use currYaw for smooth camera (must fix)
+		update.Yaw = ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG); // use currYaw for smooth camera (must fix)
 		//printf("%.2f %.2f %.2f\n", update.Yaw, Entities_->List[ENTITIES_SELF_ID]->Yaw, diffYaw);
 	}
 	Entities_->List[ENTITIES_SELF_ID]->VTABLE->SetLocation(Entities_->List[ENTITIES_SELF_ID], &update, false);
@@ -741,7 +788,7 @@ void selfMarioTick(struct ScheduledTask* task)
 
 	if (Gui_->InputGrab) // menu is open
 	{
-		memset(&marioInputs, 0, sizeof(struct SM64MarioInputs));
+		memset(&obj->input, 0, sizeof(struct SM64MarioInputs));
 		return;
 	}
 
@@ -788,13 +835,13 @@ void selfMarioTick(struct ScheduledTask* task)
 		spd = 1;
 	}
 
-	marioInputs.stickX = Math_Cos(dir) * spd;
-	marioInputs.stickY = Math_Sin(dir) * spd;
-	marioInputs.camLookX = (update.Pos.X - Camera_->CurrentPos.X);
-	marioInputs.camLookZ = (update.Pos.Z - Camera_->CurrentPos.Z);
-	marioInputs.buttonA = KeyBind_IsPressed(KEYBIND_JUMP);
-	marioInputs.buttonB = KeyBind_IsPressed(KEYBIND_DELETE_BLOCK);
-	marioInputs.buttonZ = KeyBind_IsPressed(KEYBIND_SPEED);
+	obj->input.stickX = Math_Cos(dir) * spd;
+	obj->input.stickY = Math_Sin(dir) * spd;
+	obj->input.camLookX = (update.Pos.X - Camera_->CurrentPos.X);
+	obj->input.camLookZ = (update.Pos.Z - Camera_->CurrentPos.Z);
+	obj->input.buttonA = KeyBind_IsPressed(KEYBIND_JUMP);
+	obj->input.buttonB = KeyBind_IsPressed(KEYBIND_DELETE_BLOCK);
+	obj->input.buttonZ = KeyBind_IsPressed(KEYBIND_SPEED);
 	/*
 	Entities_->List[ENTITIES_SELF_ID]->Position.X = marioState.position[0];
 	Entities_->List[ENTITIES_SELF_ID]->Position.Y = marioState.position[1];
@@ -805,8 +852,7 @@ void selfMarioTick(struct ScheduledTask* task)
 static void Classic64_Init()
 {
 	LoadSymbolsFromGame();
-	memset(&marioIds, -1, sizeof(marioIds));
-	memset(&marioObjs, -1, sizeof(marioObjs));
+	for (int i=0; i<256; i++) marioInstances[i] = 0;
 	loadSettings();
 
 	FILE *f = fopen("plugins/sm64.us.z64", "rb");
@@ -838,18 +884,13 @@ static void Classic64_Init()
 	fclose(f);
 
 	// Mario texture is 704x64 RGBA (changed to 1024x64 in this classicube plugin)
-	marioTextureUint8 = (uint8_t*)malloc(4 * 1024 * SM64_TEXTURE_HEIGHT);
-	marioBitmap.scan0 = (BitmapCol*)malloc(sizeof(BitmapCol) * 1024 * SM64_TEXTURE_HEIGHT); // texture sizes must be power of two
-
-	marioGeometry.position = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
-	marioGeometry.color    = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
-	marioGeometry.normal   = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
-	marioGeometry.uv       = malloc( sizeof(float) * 6 * SM64_GEO_MAX_TRIANGLES );
+	marioTextureUint8 = (uint8_t*)malloc(4 * SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT);
+	marioBitmap.scan0 = (BitmapCol*)malloc(sizeof(BitmapCol) * SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT); // texture sizes must be power of two
 
 	sm64_global_terminate();
 	sm64_global_init(romBuffer, marioTextureUint8, NULL);
 	f = fopen("texture.raw", "wb");
-	for (int i=0; i<1024 * SM64_TEXTURE_HEIGHT; i++) // copy texture to classicube bitmap
+	for (int i=0; i<SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT; i++) // copy texture to classicube bitmap
 	{
 		int x = i % 1024;
 		if (x < 704)
@@ -881,8 +922,6 @@ static void Classic64_Init()
 	free(romBuffer);
 
 	marioTextureID = Gfx_CreateTexture(&marioBitmap, 0, false);
-	marioVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
-	marioTexturedVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
 
 	SendChat("&aSuper Mario 64 US ROM loaded!", NULL, NULL, NULL);
 
@@ -901,17 +940,7 @@ static void Classic64_Free()
 	if (!inited) return;
 	allowTick = false;
 	for (int i=0; i<256; i++)
-	{
-		for (int j=0; j<9*3; j++)
-		{
-			if (marioObjs[i][j] == -1) continue;
-			sm64_surface_object_delete(marioObjs[i][j]);
-			marioObjs[i][j] = -1;
-		}
-		if (marioIds[i] == -1) continue;
-		sm64_mario_delete(marioIds[i]);
-		marioIds[i] = -1;
-	}
+		deleteMario(i);
 }
 
 static void Classic64_Reset()
@@ -919,17 +948,7 @@ static void Classic64_Reset()
 	if (!inited) return;
 	allowTick = false;
 	for (int i=0; i<256; i++)
-	{
-		for (int j=0; j<9*3; j++)
-		{
-			if (marioObjs[i][j] == -1) continue;
-			sm64_surface_object_delete(marioObjs[i][j]);
-			marioObjs[i][j] = -1;
-		}
-		if (marioIds[i] == -1) continue;
-		sm64_mario_delete(marioIds[i]);
-		marioIds[i] = -1;
-	}
+		deleteMario(i);
 }
 
 static void Classic64_OnNewMap()
@@ -937,17 +956,7 @@ static void Classic64_OnNewMap()
 	if (!inited) return;
 	allowTick = false;
 	for (int i=0; i<256; i++)
-	{
-		for (int j=0; j<9*3; j++)
-		{
-			if (marioObjs[i][j] == -1) continue;
-			sm64_surface_object_delete(marioObjs[i][j]);
-			marioObjs[i][j] = -1;
-		}
-		if (marioIds[i] == -1) continue;
-		sm64_mario_delete(marioIds[i]);
-		marioIds[i] = -1;
-	}
+		deleteMario(i);
 }
 
 static void Classic64_OnNewMapLoaded()
