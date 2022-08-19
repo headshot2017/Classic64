@@ -34,6 +34,7 @@ If you are on a server with hacks enabled (flying, speed, etc) but the "/model" 
 
 ## Known issues
 * Movement on first person camera is buggy/broken.
+* Sometimes, if your selected slot on the hotbar is empty (no block on hand, when your hand is visible), while playing as Mario, the game might crash.
 * Resizing, maximizing or going fullscreen on Direct3D9 builds of ClassiCube with this plugin will crash the game. "Error recreating D3D9 context"
 * When switching from the Mario model back to the default model, chances are the game will crash. Happens on Direct3D9 and OpenGL builds.
 * If the game crashes when starting:
