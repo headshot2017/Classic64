@@ -405,6 +405,7 @@ void deleteMario(int i)
 {
 	if (!marioInstances[i]) return;
 	struct MarioInstance *obj = marioInstances[i];
+	printf("delete mario %d\n", i);
 
 	deleteBlocks(obj->surfaces);
 	sm64_mario_delete(obj->ID);
@@ -680,12 +681,29 @@ void marioTick(struct ScheduledTask* task)
 				continue;
 			}
 
-			if (obj->state.position[0] != 0 && obj->state.position[1] != 0 && obj->state.position[2] != 0)
+			if (i != ENTITIES_SELF_ID) // not you
+			{
+				Vec3 newPos = {Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE};
+				sm64_set_mario_position(obj->ID, newPos.X, newPos.Y, newPos.Z);
+				obj->input.buttonA = (newPos.Y - obj->lastPos.Y > 0);
+
+				bool moved = (newPos.Z - obj->lastPos.Z) && (newPos.X - obj->lastPos.X);
+				if (moved)
+				{
+					float dir = atan2(newPos.Z - obj->lastPos.Z, newPos.X - obj->lastPos.X);
+					obj->input.stickX = -cos(dir);
+					obj->input.stickY = -sin(dir);
+				}
+				else
+					obj->input.stickX = obj->input.stickY = 0;
+
+				obj->lastPos = newPos;
+			}
+			else if (obj->state.position[0] != 0 && obj->state.position[1] != 0 && obj->state.position[2] != 0)
 			{
 				obj->lastPos.X = obj->state.position[0]; obj->lastPos.Y = obj->state.position[1]; obj->lastPos.Z = obj->state.position[2];
 			}
 
-			//if (i != ENTITIES_SELF_ID) sm64_set_mario_position(obj->ID, Entities_->List[ENTITIES_SELF_ID]->Position.X, Entities_->List[ENTITIES_SELF_ID]->Position.Y, Entities_->List[ENTITIES_SELF_ID]->Position.Z);
 			if (!pluginOptions[PLUGINOPTION_HURT].value && sm64_mario_get_health(obj->ID) != 0xff) sm64_mario_set_health(obj->ID, 0x880);
 
 			// water
