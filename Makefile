@@ -2,7 +2,7 @@ default: lib
 
 CC      := gcc
 CXX 	:= g++
-CFLAGS  := -g -Wall -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
+CFLAGS  := -g -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
 LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC
 ifeq ($(OS),Windows_NT)

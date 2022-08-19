@@ -202,7 +202,7 @@ static void marioModel_MakeParts(void) {}
 static float marioModel_GetNameY(struct Entity* e) { return 1+0.25f; }
 static float marioModel_GetEyeY(struct Entity* e)  { return 1; }
 static void marioModel_GetSize(struct Entity* e) {e->Size = (Vec3) { 0.5f, 1, 0.5f };}
-static void marioModel_GetBounds(struct Entity* e) {e->ModelAABB = (struct AABB) { 0, 0, 0, 0, 0, 0 };}
+static void marioModel_GetBounds(struct Entity* e) {e->ModelAABB = (struct AABB) { {0}, {0} };}
 static struct ModelVertex mario_unused_vertices[1]; // without this, the game crashes in first person view with nothing held in hand
 static struct Model mario_model = { "mario64", mario_unused_vertices, NULL,
 	marioModel_MakeParts, marioModel_Draw,
@@ -549,6 +549,7 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 			{
 				obj.surfaces[ind].type = (Blocks_->Collide[block] == COLLIDE_ICE || Blocks_->Collide[block] == COLLIDE_SLIPPERY_ICE) ? SURFACE_ICE : SURFACE_DEFAULT;
 				obj.surfaces[ind].force = 0;
+				if (obj.surfaces[ind].type == SURFACE_ICE) obj.surfaces[ind].terrain = TERRAIN_SLIDE;
 				switch(Blocks_->StepSounds[block])
 				{
 					case SOUND_SNOW:
