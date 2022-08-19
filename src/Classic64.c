@@ -143,6 +143,7 @@ struct MarioInstance // represents a Mario object in the plugin
 	int32_t ID;
 	uint32_t surfaces[9*3];
 	Vec3 lastPos;
+	Vec3 currPos;
 
 	struct SM64MarioInputs input;
 	struct SM64MarioState state;
@@ -161,6 +162,7 @@ struct MarioInstance // represents a Mario object in the plugin
 int ticksBeforeSpawn;
 bool inited;
 bool allowTick; // false when loading world
+float marioInterpTicks;
 //struct SM64MarioInputs marioInputs;
 //struct SM64MarioState marioState;
 //struct SM64MarioGeometryBuffers marioGeometry;
@@ -658,9 +660,9 @@ void marioTick(struct ScheduledTask* task)
 				marioInstances[i] = (struct MarioInstance*)malloc(sizeof(struct MarioInstance));
 				marioInstances[i]->ID = ID;
 				memcpy(&marioInstances[i]->surfaces, surfaces, sizeof(surfaces));
-				marioInstances[i]->lastPos.X = Entities_->List[i]->Position.X*IMARIO_SCALE;
-				marioInstances[i]->lastPos.Y = Entities_->List[i]->Position.Y*IMARIO_SCALE;
-				marioInstances[i]->lastPos.Z = Entities_->List[i]->Position.Z*IMARIO_SCALE;
+				marioInstances[i]->lastPos.X = marioInstances[i]->currPos.X = Entities_->List[i]->Position.X*IMARIO_SCALE;
+				marioInstances[i]->lastPos.Y = marioInstances[i]->currPos.Y = Entities_->List[i]->Position.Y*IMARIO_SCALE;
+				marioInstances[i]->lastPos.Z = marioInstances[i]->currPos.Z = Entities_->List[i]->Position.Z*IMARIO_SCALE;
 				memset(&marioInstances[i]->input, 0, sizeof(struct SM64MarioInputs));
 				marioInstances[i]->geometry.position = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
 				marioInstances[i]->geometry.color    = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
@@ -699,8 +701,9 @@ void marioTick(struct ScheduledTask* task)
 
 				obj->lastPos = newPos;
 			}
-			else if (obj->state.position[0] != 0 && obj->state.position[1] != 0 && obj->state.position[2] != 0)
+			else
 			{
+				marioInterpTicks = 0;
 				obj->lastPos.X = obj->state.position[0]; obj->lastPos.Y = obj->state.position[1]; obj->lastPos.Z = obj->state.position[2];
 			}
 
@@ -717,6 +720,9 @@ void marioTick(struct ScheduledTask* task)
 			sm64_set_mario_water_level(obj->ID, waterY*IMARIO_SCALE+IMARIO_SCALE);
 
 			sm64_mario_tick(obj->ID, &obj->input, &obj->state, &obj->geometry);
+			obj->currPos.X = obj->state.position[0];
+			obj->currPos.Y = obj->state.position[1];
+			obj->currPos.Z = obj->state.position[2];
 
 			obj->numTexturedTriangles = 0;
 			bool bgr = (pluginOptions[PLUGINOPTION_BGR].value);
@@ -785,6 +791,11 @@ void selfMarioTick(struct ScheduledTask* task)
 {
 	if (!marioInstances[ENTITIES_SELF_ID]) return;
 	struct MarioInstance *obj = marioInstances[ENTITIES_SELF_ID];
+
+	obj->state.position[0] = obj->lastPos.X + ((obj->currPos.X - obj->lastPos.X) * (marioInterpTicks / (1.f/30)));
+	obj->state.position[1] = obj->lastPos.Y + ((obj->currPos.Y - obj->lastPos.Y) * (marioInterpTicks / (1.f/30)));
+	obj->state.position[2] = obj->lastPos.Z + ((obj->currPos.Z - obj->lastPos.Z) * (marioInterpTicks / (1.f/30)));
+	if (marioInterpTicks < 1.f/30) marioInterpTicks += 1.f/300;
 
 	struct LocationUpdate update = {0};
 	update.Flags = LOCATIONUPDATE_POS;
@@ -894,6 +905,7 @@ static void Classic64_Init()
 	inited = true;
 	allowTick = false;
 	ticksBeforeSpawn = 1;
+	marioInterpTicks = 0;
 
 	// load libsm64
 	uint8_t *romBuffer;
