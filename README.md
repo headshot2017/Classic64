@@ -34,11 +34,9 @@ If you are on a server with hacks enabled (flying, speed, etc) but the "/model" 
 
 ## Known issues
 * Resizing, maximizing or going fullscreen on Direct3D9 builds of ClassiCube with this plugin will crash the game. "Error recreating D3D9 context"
-* If the game crashes...
-  * When starting:
-    * Make sure the ROM matches the SHA-1 checksum: `9bef1128717f958171a4afac3ed78ee2bb4e86ce`
-  * When switching to Mario:
-    * If you are on a stock ClassiCube 1.3.2 build, download and play with the dev builds until ClassiCube 1.3.3 releases. (Click Options, then select Updates, then select one of the dev builds.)
+* When switching from the Mario model back to the default model, chances are the game will crash. Happens on Direct3D9 and OpenGL builds.
+* If the game crashes when starting:
+  * Make sure the ROM matches the SHA-1 checksum: `9bef1128717f958171a4afac3ed78ee2bb4e86ce`
 
 ## Client-side commands
 All client-side commands start with `/client mario64`

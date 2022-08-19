@@ -58,6 +58,7 @@ static struct _BlockLists* Blocks_;
 static struct _ModelsData* Models_;
 static struct _GameData* Game_;
 static struct _WorldData* World_;
+static struct _EnvData* Env_;
 static struct _EntitiesData* Entities_;
 static struct _CameraData* Camera_;
 static struct _GuiData* Gui_;
@@ -700,6 +701,10 @@ void marioTick(struct ScheduledTask* task)
 
 			obj->numTexturedTriangles = 0;
 			bool bgr = (pluginOptions[PLUGINOPTION_BGR].value);
+
+			// fix for 1.3.2 until a future release comes out with the lighting system refactor
+			PackedCol lightCol = (Lighting_) ? Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE) : Env_->SunCol;
+
 			for (int i=0; i<obj->geometry.numTrianglesUsed; i++)
 			{
 				bool hasTexture = (obj->geometry.uv[i*6+0] != 1 && obj->geometry.uv[i*6+1] != 1 && obj->geometry.uv[i*6+2] != 1 && obj->geometry.uv[i*6+3] != 1 && obj->geometry.uv[i*6+4] != 1 && obj->geometry.uv[i*6+5] != 1);
@@ -709,7 +714,7 @@ void marioTick(struct ScheduledTask* task)
 					(obj->geometry.position[i*9+0] - obj->state.position[0]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+1] - obj->state.position[1]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+2] - obj->state.position[2]) / MARIO_SCALE,
-					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?2:0)]*255, obj->geometry.color[i*9+1]*255, obj->geometry.color[i*9 + (bgr?0:2)]*255, 255), Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE)),
+					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?2:0)]*255, obj->geometry.color[i*9+1]*255, obj->geometry.color[i*9 + (bgr?0:2)]*255, 255), lightCol),
 					(wingCap) ? 0 : 0.95, (wingCap) ? 0.95 : 0
 				};
 
@@ -717,7 +722,7 @@ void marioTick(struct ScheduledTask* task)
 					(obj->geometry.position[i*9+3] - obj->state.position[0]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+4] - obj->state.position[1]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+5] - obj->state.position[2]) / MARIO_SCALE,
-					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?5:3)]*255, obj->geometry.color[i*9+4]*255, obj->geometry.color[i*9 + (bgr?3:5)]*255, 255), Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE)),
+					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?5:3)]*255, obj->geometry.color[i*9+4]*255, obj->geometry.color[i*9 + (bgr?3:5)]*255, 255), lightCol),
 					(wingCap) ? 0 : 0.96, (wingCap) ? 0.96 : 0
 				};
 
@@ -725,7 +730,7 @@ void marioTick(struct ScheduledTask* task)
 					(obj->geometry.position[i*9+6] - obj->state.position[0]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+7] - obj->state.position[1]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+8] - obj->state.position[2]) / MARIO_SCALE,
-					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?8:6)]*255, obj->geometry.color[i*9+7]*255, obj->geometry.color[i*9 + (bgr?6:8)]*255, 255), Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE)),
+					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?8:6)]*255, obj->geometry.color[i*9+7]*255, obj->geometry.color[i*9 + (bgr?6:8)]*255, 255), lightCol),
 					(wingCap) ? 0.01 : 0.96, (wingCap) ? 0.96 : 1
 				};
 
@@ -737,7 +742,7 @@ void marioTick(struct ScheduledTask* task)
 					{
 						obj->texturedVertices[obj->numTexturedTriangles*4+j] = (struct VertexTextured) {
 							obj->vertices[i*4+j].X, obj->vertices[i*4+j].Y, obj->vertices[i*4+j].Z,
-							PackedCol_Tint(PACKEDCOL_WHITE, Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE)),
+							PackedCol_Tint(PACKEDCOL_WHITE, lightCol),
 							obj->geometry.uv[i*6+(j*2+0)], obj->geometry.uv[i*6+(j*2+1)]
 						};
 					}
@@ -999,6 +1004,7 @@ static void LoadSymbolsFromGame(void) {
 	LoadSymbol(Models); 
 	LoadSymbol(Game);
 	LoadSymbol(World);
+	LoadSymbol(Env);
 	LoadSymbol(Entities);
 	LoadSymbol(Camera);
 	LoadSymbol(Gui);
