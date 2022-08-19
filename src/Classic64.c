@@ -414,8 +414,8 @@ void deleteMario(int i)
 	free(obj->geometry.color);
 	free(obj->geometry.normal);
 	free(obj->geometry.uv);
-	Gfx_DeleteDynamicVb(obj->vertexID);
-	Gfx_DeleteDynamicVb(obj->texturedVertexID);
+	//Gfx_DeleteDynamicVb(obj->vertexID);
+	//Gfx_DeleteDynamicVb(obj->texturedVertexID);
 
 	free(marioInstances[i]);
 	marioInstances[i] = 0;
