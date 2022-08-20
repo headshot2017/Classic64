@@ -777,9 +777,9 @@ void marioTick(struct ScheduledTask* task)
 			Gfx_SetDynamicVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
 			Gfx_SetDynamicVbData(obj->texturedVertexID, &obj->texturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
 
-			if ((int)(obj->lastPos.X) != (int)(obj->state.position[0]) || (int)(obj->lastPos.Y) != (int)(obj->state.position[1]) || (int)(obj->lastPos.Z) != (int)(obj->state.position[2]))
+			if ((int)(obj->lastPos.X) != (int)(obj->currPos.X) || (int)(obj->lastPos.Y) != (int)(obj->currPos.Y) || (int)(obj->lastPos.Z) != (int)(obj->currPos.Z))
 			{
-				loadNewBlocks(i, obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE, obj->surfaces);
+				loadNewBlocks(i, obj->currPos.X/MARIO_SCALE, obj->currPos.Y/MARIO_SCALE, obj->currPos.Z/MARIO_SCALE, obj->surfaces);
 			}
 		}
 	}
