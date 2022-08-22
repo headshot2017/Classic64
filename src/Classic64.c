@@ -204,7 +204,7 @@ static void marioModel_MakeParts(void) {}
 static float marioModel_GetNameY(struct Entity* e) { return 1+0.25f; }
 static float marioModel_GetEyeY(struct Entity* e)  { return 1; }
 static void marioModel_GetSize(struct Entity* e) {e->Size = (Vec3) { 0.5f, 1, 0.5f };}
-static void marioModel_GetBounds(struct Entity* e) {e->ModelAABB = (struct AABB) { {0}, {0} };}
+static void marioModel_GetBounds(struct Entity* e) {AABB_Make(&e->ModelAABB, &e->Position, &e->Size);}
 static struct ModelVertex mario_unused_vertices[1]; // without this, the game crashes in first person view with nothing held in hand
 static struct Model mario_model = { "mario64", mario_unused_vertices, NULL,
 	marioModel_MakeParts, marioModel_Draw,
