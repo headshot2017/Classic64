@@ -51,6 +51,10 @@ static void SendChat(const char* format, const void* arg1, const void* arg2, con
 	Chat_Add(&msg);
 }
 
+BlockID World_SafeGetBlock(int x, int y, int z) {
+	return World_Contains(x, y, z) ? World_GetBlock(x, y, z) : BLOCK_AIR;
+}
+
 // classicube symbols
 static void LoadSymbolsFromGame(void);
 static struct _ServerConnectionData* Server_;
@@ -444,102 +448,107 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 		for (int xadd=-1; xadd<=1; xadd++)
 		{
 			if (x+xadd < 0 || x+xadd >= World_->Width || z+zadd < 0 || z+zadd >= World_->Length) continue;
+			BlockID block;
 
 			// get block at mario's head if it exists
-			BlockID block = World_GetBlock(x+xadd, y+1, z+zadd);
-			if (block != 0 && (Blocks_->Collide[block] == COLLIDE_SOLID || Blocks_->Collide[block] == COLLIDE_ICE || Blocks_->Collide[block] == COLLIDE_SLIPPERY_ICE))
+			if (y+1 < World_->Height)
 			{
-				struct SM64SurfaceObject obj;
-				memset(&obj.transform, 0, sizeof(struct SM64ObjectTransform));
-				obj.transform.position[0] = (x+xadd) * IMARIO_SCALE;
-				obj.transform.position[1] = (y+1) * IMARIO_SCALE - IMARIO_SCALE;
-				obj.transform.position[2] = (z+zadd) * IMARIO_SCALE;
-				obj.surfaceCount = 6*2;
-				obj.surfaces = (struct SM64Surface*)malloc(sizeof(struct SM64Surface) * obj.surfaceCount);
-
-				for (int ind=0; ind<obj.surfaceCount; ind++)
+				block = World_SafeGetBlock(x+xadd, y+1, z+zadd);
+				if (block != 0 && (Blocks_->Collide[block] == COLLIDE_SOLID || Blocks_->Collide[block] == COLLIDE_ICE || Blocks_->Collide[block] == COLLIDE_SLIPPERY_ICE))
 				{
-					obj.surfaces[ind].type = (Blocks_->Collide[block] == COLLIDE_ICE || Blocks_->Collide[block] == COLLIDE_SLIPPERY_ICE) ? SURFACE_ICE : SURFACE_DEFAULT;
-					obj.surfaces[ind].force = 0;
-					switch(Blocks_->StepSounds[block])
+					struct SM64SurfaceObject obj;
+					memset(&obj.transform, 0, sizeof(struct SM64ObjectTransform));
+					obj.transform.position[0] = (x+xadd) * IMARIO_SCALE;
+					obj.transform.position[1] = (y+1) * IMARIO_SCALE - IMARIO_SCALE;
+					obj.transform.position[2] = (z+zadd) * IMARIO_SCALE;
+					obj.surfaceCount = 6*2;
+					obj.surfaces = (struct SM64Surface*)malloc(sizeof(struct SM64Surface) * obj.surfaceCount);
+
+					for (int ind=0; ind<obj.surfaceCount; ind++)
 					{
-						case SOUND_SNOW:
-							obj.surfaces[ind].terrain = TERRAIN_SNOW;
-							break;
-						case SOUND_GRASS:
-						case SOUND_GRAVEL:
-						case SOUND_CLOTH:
-						case SOUND_METAL:
-							obj.surfaces[ind].terrain = TERRAIN_GRASS;
-							break;
-						case SOUND_SAND:
-							obj.surfaces[ind].terrain = TERRAIN_SAND;
-							break;
-						case SOUND_WOOD:
-							obj.surfaces[ind].terrain = TERRAIN_SPOOKY;
-							break;
-						default:
-							obj.surfaces[ind].terrain = TERRAIN_STONE;
-							break;
+						obj.surfaces[ind].type = (Blocks_->Collide[block] == COLLIDE_ICE || Blocks_->Collide[block] == COLLIDE_SLIPPERY_ICE) ? SURFACE_ICE : SURFACE_DEFAULT;
+						obj.surfaces[ind].force = 0;
+						if (obj.surfaces[ind].type == SURFACE_ICE) obj.surfaces[ind].terrain = TERRAIN_SLIDE;
+						else switch(Blocks_->StepSounds[block])
+						{
+							case SOUND_SNOW:
+								obj.surfaces[ind].terrain = TERRAIN_SNOW;
+								break;
+							case SOUND_GRASS:
+							case SOUND_GRAVEL:
+							case SOUND_CLOTH:
+							case SOUND_METAL:
+								obj.surfaces[ind].terrain = TERRAIN_GRASS;
+								break;
+							case SOUND_SAND:
+								obj.surfaces[ind].terrain = TERRAIN_SAND;
+								break;
+							case SOUND_WOOD:
+								obj.surfaces[ind].terrain = TERRAIN_SPOOKY;
+								break;
+							default:
+								obj.surfaces[ind].terrain = TERRAIN_STONE;
+								break;
+						}
 					}
+
+					// block ground face
+					obj.surfaces[0].vertices[0][0] = IMARIO_SCALE; obj.surfaces[0].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[0].vertices[0][2] = IMARIO_SCALE;
+					obj.surfaces[0].vertices[1][0] = 0; obj.surfaces[0].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[0].vertices[1][2] = 0;
+					obj.surfaces[0].vertices[2][0] = 0; obj.surfaces[0].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[0].vertices[2][2] = IMARIO_SCALE;
+
+					obj.surfaces[1].vertices[0][0] = 0; obj.surfaces[1].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[1].vertices[0][2] = 0;
+					obj.surfaces[1].vertices[1][0] = IMARIO_SCALE; obj.surfaces[1].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[1].vertices[1][2] = IMARIO_SCALE;
+					obj.surfaces[1].vertices[2][0] = IMARIO_SCALE; obj.surfaces[1].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[1].vertices[2][2] = 0;
+
+					// left (Z+)
+					obj.surfaces[2].vertices[0][0] = 0; obj.surfaces[2].vertices[0][1] = 0; obj.surfaces[2].vertices[0][2] = IMARIO_SCALE;
+					obj.surfaces[2].vertices[1][0] = IMARIO_SCALE; obj.surfaces[2].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[2].vertices[1][2] = IMARIO_SCALE;
+					obj.surfaces[2].vertices[2][0] = 0; obj.surfaces[2].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[2].vertices[2][2] = IMARIO_SCALE;
+
+					obj.surfaces[3].vertices[0][0] = IMARIO_SCALE; obj.surfaces[3].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[3].vertices[0][2] = IMARIO_SCALE;
+					obj.surfaces[3].vertices[1][0] = 0; obj.surfaces[3].vertices[1][1] = 0; obj.surfaces[3].vertices[1][2] = IMARIO_SCALE;
+					obj.surfaces[3].vertices[2][0] = IMARIO_SCALE; obj.surfaces[3].vertices[2][1] = 0; obj.surfaces[3].vertices[2][2] = IMARIO_SCALE;
+
+					// right (Z-)
+					obj.surfaces[4].vertices[0][0] = IMARIO_SCALE; obj.surfaces[4].vertices[0][1] = 0; obj.surfaces[4].vertices[0][2] = 0;
+					obj.surfaces[4].vertices[1][0] = 0; obj.surfaces[4].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[4].vertices[1][2] = 0;
+					obj.surfaces[4].vertices[2][0] = IMARIO_SCALE; obj.surfaces[4].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[4].vertices[2][2] = 0;
+
+					obj.surfaces[5].vertices[0][0] = 0; obj.surfaces[5].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[5].vertices[0][2] = 0;
+					obj.surfaces[5].vertices[1][0] = IMARIO_SCALE; obj.surfaces[5].vertices[1][1] = 0; obj.surfaces[5].vertices[1][2] = 0;
+					obj.surfaces[5].vertices[2][0] = 0; obj.surfaces[5].vertices[2][1] = 0; obj.surfaces[5].vertices[2][2] = 0;
+
+					// back (X+)
+					obj.surfaces[6].vertices[0][0] = IMARIO_SCALE; obj.surfaces[6].vertices[0][1] = 0; obj.surfaces[6].vertices[0][2] = 0;
+					obj.surfaces[6].vertices[1][0] = IMARIO_SCALE; obj.surfaces[6].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[6].vertices[1][2] = 0;
+					obj.surfaces[6].vertices[2][0] = IMARIO_SCALE; obj.surfaces[6].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[6].vertices[2][2] = IMARIO_SCALE;
+
+					obj.surfaces[7].vertices[0][0] = IMARIO_SCALE; obj.surfaces[7].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[7].vertices[0][2] = IMARIO_SCALE;
+					obj.surfaces[7].vertices[1][0] = IMARIO_SCALE; obj.surfaces[7].vertices[1][1] = 0; obj.surfaces[7].vertices[1][2] = IMARIO_SCALE;
+					obj.surfaces[7].vertices[2][0] = IMARIO_SCALE; obj.surfaces[7].vertices[2][1] = 0; obj.surfaces[7].vertices[2][2] = 0;
+
+					// front (X-)
+					obj.surfaces[8].vertices[0][0] = 0; obj.surfaces[8].vertices[0][1] = 0; obj.surfaces[8].vertices[0][2] = IMARIO_SCALE;
+					obj.surfaces[8].vertices[1][0] = 0; obj.surfaces[8].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[8].vertices[1][2] = IMARIO_SCALE;
+					obj.surfaces[8].vertices[2][0] = 0; obj.surfaces[8].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[8].vertices[2][2] = 0;
+
+					obj.surfaces[9].vertices[0][0] = 0; obj.surfaces[9].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[9].vertices[0][2] = 0;
+					obj.surfaces[9].vertices[1][0] = 0; obj.surfaces[9].vertices[1][1] = 0; obj.surfaces[9].vertices[1][2] = 0;
+					obj.surfaces[9].vertices[2][0] = 0; obj.surfaces[9].vertices[2][1] = 0; obj.surfaces[9].vertices[2][2] = IMARIO_SCALE;
+
+					// block bottom face
+					obj.surfaces[10].vertices[0][0] = 0; obj.surfaces[10].vertices[0][1] = 0; obj.surfaces[10].vertices[0][2] = IMARIO_SCALE;
+					obj.surfaces[10].vertices[1][0] = 0; obj.surfaces[10].vertices[1][1] = 0; obj.surfaces[10].vertices[1][2] = 0;
+					obj.surfaces[10].vertices[2][0] = IMARIO_SCALE; obj.surfaces[10].vertices[2][1] = 0; obj.surfaces[10].vertices[2][2] = IMARIO_SCALE;
+
+					obj.surfaces[11].vertices[0][0] = IMARIO_SCALE; obj.surfaces[11].vertices[0][1] = 0; obj.surfaces[11].vertices[0][2] = 0;
+					obj.surfaces[11].vertices[1][0] = IMARIO_SCALE; obj.surfaces[11].vertices[1][1] = 0; obj.surfaces[11].vertices[1][2] = IMARIO_SCALE;
+					obj.surfaces[11].vertices[2][0] = 0; obj.surfaces[11].vertices[2][1] = 0; obj.surfaces[11].vertices[2][2] = 0;
+
+					arrayTarget[j++] = sm64_surface_object_create(&obj);
+					free(obj.surfaces);
 				}
-
-				// block ground face
-				obj.surfaces[0].vertices[0][0] = IMARIO_SCALE; obj.surfaces[0].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[0].vertices[0][2] = IMARIO_SCALE;
-				obj.surfaces[0].vertices[1][0] = 0; obj.surfaces[0].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[0].vertices[1][2] = 0;
-				obj.surfaces[0].vertices[2][0] = 0; obj.surfaces[0].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[0].vertices[2][2] = IMARIO_SCALE;
-
-				obj.surfaces[1].vertices[0][0] = 0; obj.surfaces[1].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[1].vertices[0][2] = 0;
-				obj.surfaces[1].vertices[1][0] = IMARIO_SCALE; obj.surfaces[1].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[1].vertices[1][2] = IMARIO_SCALE;
-				obj.surfaces[1].vertices[2][0] = IMARIO_SCALE; obj.surfaces[1].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[1].vertices[2][2] = 0;
-
-				// left (Z+)
-				obj.surfaces[2].vertices[0][0] = 0; obj.surfaces[2].vertices[0][1] = 0; obj.surfaces[2].vertices[0][2] = IMARIO_SCALE;
-				obj.surfaces[2].vertices[1][0] = IMARIO_SCALE; obj.surfaces[2].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[2].vertices[1][2] = IMARIO_SCALE;
-				obj.surfaces[2].vertices[2][0] = 0; obj.surfaces[2].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[2].vertices[2][2] = IMARIO_SCALE;
-
-				obj.surfaces[3].vertices[0][0] = IMARIO_SCALE; obj.surfaces[3].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[3].vertices[0][2] = IMARIO_SCALE;
-				obj.surfaces[3].vertices[1][0] = 0; obj.surfaces[3].vertices[1][1] = 0; obj.surfaces[3].vertices[1][2] = IMARIO_SCALE;
-				obj.surfaces[3].vertices[2][0] = IMARIO_SCALE; obj.surfaces[3].vertices[2][1] = 0; obj.surfaces[3].vertices[2][2] = IMARIO_SCALE;
-
-				// right (Z-)
-				obj.surfaces[4].vertices[0][0] = IMARIO_SCALE; obj.surfaces[4].vertices[0][1] = 0; obj.surfaces[4].vertices[0][2] = 0;
-				obj.surfaces[4].vertices[1][0] = 0; obj.surfaces[4].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[4].vertices[1][2] = 0;
-				obj.surfaces[4].vertices[2][0] = IMARIO_SCALE; obj.surfaces[4].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[4].vertices[2][2] = 0;
-
-				obj.surfaces[5].vertices[0][0] = 0; obj.surfaces[5].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[5].vertices[0][2] = 0;
-				obj.surfaces[5].vertices[1][0] = IMARIO_SCALE; obj.surfaces[5].vertices[1][1] = 0; obj.surfaces[5].vertices[1][2] = 0;
-				obj.surfaces[5].vertices[2][0] = 0; obj.surfaces[5].vertices[2][1] = 0; obj.surfaces[5].vertices[2][2] = 0;
-
-				// back (X+)
-				obj.surfaces[6].vertices[0][0] = IMARIO_SCALE; obj.surfaces[6].vertices[0][1] = 0; obj.surfaces[6].vertices[0][2] = 0;
-				obj.surfaces[6].vertices[1][0] = IMARIO_SCALE; obj.surfaces[6].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[6].vertices[1][2] = 0;
-				obj.surfaces[6].vertices[2][0] = IMARIO_SCALE; obj.surfaces[6].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[6].vertices[2][2] = IMARIO_SCALE;
-
-				obj.surfaces[7].vertices[0][0] = IMARIO_SCALE; obj.surfaces[7].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[7].vertices[0][2] = IMARIO_SCALE;
-				obj.surfaces[7].vertices[1][0] = IMARIO_SCALE; obj.surfaces[7].vertices[1][1] = 0; obj.surfaces[7].vertices[1][2] = IMARIO_SCALE;
-				obj.surfaces[7].vertices[2][0] = IMARIO_SCALE; obj.surfaces[7].vertices[2][1] = 0; obj.surfaces[7].vertices[2][2] = 0;
-
-				// front (X-)
-				obj.surfaces[8].vertices[0][0] = 0; obj.surfaces[8].vertices[0][1] = 0; obj.surfaces[8].vertices[0][2] = IMARIO_SCALE;
-				obj.surfaces[8].vertices[1][0] = 0; obj.surfaces[8].vertices[1][1] = IMARIO_SCALE*2; obj.surfaces[8].vertices[1][2] = IMARIO_SCALE;
-				obj.surfaces[8].vertices[2][0] = 0; obj.surfaces[8].vertices[2][1] = IMARIO_SCALE*2; obj.surfaces[8].vertices[2][2] = 0;
-
-				obj.surfaces[9].vertices[0][0] = 0; obj.surfaces[9].vertices[0][1] = IMARIO_SCALE*2; obj.surfaces[9].vertices[0][2] = 0;
-				obj.surfaces[9].vertices[1][0] = 0; obj.surfaces[9].vertices[1][1] = 0; obj.surfaces[9].vertices[1][2] = 0;
-				obj.surfaces[9].vertices[2][0] = 0; obj.surfaces[9].vertices[2][1] = 0; obj.surfaces[9].vertices[2][2] = IMARIO_SCALE;
-
-				// block bottom face
-				obj.surfaces[10].vertices[0][0] = 0; obj.surfaces[10].vertices[0][1] = 0; obj.surfaces[10].vertices[0][2] = IMARIO_SCALE;
-				obj.surfaces[10].vertices[1][0] = 0; obj.surfaces[10].vertices[1][1] = 0; obj.surfaces[10].vertices[1][2] = 0;
-				obj.surfaces[10].vertices[2][0] = IMARIO_SCALE; obj.surfaces[10].vertices[2][1] = 0; obj.surfaces[10].vertices[2][2] = IMARIO_SCALE;
-
-				obj.surfaces[11].vertices[0][0] = IMARIO_SCALE; obj.surfaces[11].vertices[0][1] = 0; obj.surfaces[11].vertices[0][2] = 0;
-				obj.surfaces[11].vertices[1][0] = IMARIO_SCALE; obj.surfaces[11].vertices[1][1] = 0; obj.surfaces[11].vertices[1][2] = IMARIO_SCALE;
-				obj.surfaces[11].vertices[2][0] = 0; obj.surfaces[11].vertices[2][1] = 0; obj.surfaces[11].vertices[2][2] = 0;
-
-				arrayTarget[j++] = sm64_surface_object_create(&obj);
-				free(obj.surfaces);
 			}
 
 			// get block at floor
@@ -547,8 +556,8 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 			do
 			{
 				yadd--;
-				if (y+yadd < 0 || y+yadd >= World_->Height) break;
-				block = World_GetBlock(x+xadd, y+yadd, z+zadd);
+				if (y+yadd < 0) break;
+				block = World_SafeGetBlock(x+xadd, y+yadd, z+zadd);
 			} while (block == 0 || (Blocks_->Collide[block] != COLLIDE_SOLID && Blocks_->Collide[block] != COLLIDE_ICE && Blocks_->Collide[block] != COLLIDE_SLIPPERY_ICE));
 
 			struct SM64SurfaceObject obj;
@@ -564,7 +573,7 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 				obj.surfaces[ind].type = (Blocks_->Collide[block] == COLLIDE_ICE || Blocks_->Collide[block] == COLLIDE_SLIPPERY_ICE) ? SURFACE_ICE : SURFACE_DEFAULT;
 				obj.surfaces[ind].force = 0;
 				if (obj.surfaces[ind].type == SURFACE_ICE) obj.surfaces[ind].terrain = TERRAIN_SLIDE;
-				switch(Blocks_->StepSounds[block])
+				else switch(Blocks_->StepSounds[block])
 				{
 					case SOUND_SNOW:
 						obj.surfaces[ind].terrain = TERRAIN_SNOW;
@@ -723,7 +732,7 @@ void marioTick(struct ScheduledTask* task)
 			// water
 			int yadd = 0;
 			int waterY = -1024;
-			while (obj->state.position[1]/MARIO_SCALE+yadd > waterY && Blocks_->IsLiquid[World_GetBlock(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE+yadd, obj->state.position[2]/MARIO_SCALE)])
+			while (obj->state.position[1]/MARIO_SCALE+yadd > waterY && Blocks_->IsLiquid[World_SafeGetBlock(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE+yadd, obj->state.position[2]/MARIO_SCALE)])
 			{
 				waterY = obj->state.position[1]/MARIO_SCALE+yadd;
 				yadd++;
