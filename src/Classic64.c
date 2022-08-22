@@ -68,6 +68,7 @@ static struct _ChatEventsList* ChatEvents_;
 // plugin settings
 enum
 {
+	PLUGINOPTION_FIRST_USE,
 	PLUGINOPTION_HURT,
 	PLUGINOPTION_CAMERA,
 	PLUGINOPTION_BGR,
@@ -80,18 +81,25 @@ struct PluginOption {
 	cc_string desc[3];
 	int descLines;
 	int value;
+	bool hidden;
 } pluginOptions[] = {
+	{
+		String_FromConst("first_use"),
+		String_FromConst(""),
+		{String_FromConst("")},
+		1, 0, true
+	},
 	{
 		String_FromConst("hurt"),
 		String_FromConst("<on/off>"),
 		{String_FromConst("&eSet whether Mario can get hurt.")},
-		1, 0
+		1, 0, false
 	},
 	{
 		String_FromConst("camera"),
 		String_FromConst("<on/off>"),
 		{String_FromConst("&eRotate the camera automatically behind Mario.")},
-		1, 0
+		1, 0, false
 	},
 	{
 		String_FromConst("bgr"),
@@ -101,7 +109,7 @@ struct PluginOption {
 			String_FromConst("&eThis is off by default."),
 			String_FromConst("&eIf Mario's colors appear inverted, change this setting."),
 		},
-		3, 0
+		3, 0, false
 	},
 };
 
@@ -338,6 +346,7 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 			sprintf(msgBuffer, "&eAvailable settings: ");
 			for (int i=0; i<PLUGINOPTIONS_MAX; i++)
 			{
+				if (pluginOptions[i].hidden) continue;
 				strcat(msgBuffer, pluginOptions[i].name.buffer);
 				if (i != PLUGINOPTIONS_MAX-1) strcat(msgBuffer, ", ");
 			}
@@ -347,6 +356,7 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 
 		for (int i=0; i<PLUGINOPTIONS_MAX; i++)
 		{
+			if (pluginOptions[i].hidden) continue;
 			if (String_Compare(&args[1], &pluginOptions[i].name) == 0)
 			{
 				if (argsCount < 3)
@@ -378,6 +388,7 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 		}
 
 		SendChat("&cUnknown setting \"%s\"", &args[1], NULL, NULL);
+		return;
 	}
 
 	SendChat("&cUnknown option \"%s\"", &args[0], NULL, NULL);
@@ -960,6 +971,15 @@ static void Classic64_Init()
 	marioTextureID = Gfx_CreateTexture(&marioBitmap, 0, false);
 
 	SendChat("&aSuper Mario 64 US ROM loaded!", NULL, NULL, NULL);
+	if (!pluginOptions[PLUGINOPTION_FIRST_USE].value)
+	{
+		// give a little tutorial
+		pluginOptions[PLUGINOPTION_FIRST_USE].value = 1;
+		saveSettings();
+		SendChat("&bTo get started, switch to Mario by using &m/model mario64", NULL, NULL, NULL);
+		SendChat("&bYou can find some extra commands by typing &m/client mario64", NULL, NULL, NULL);
+		SendChat("&bHave fun playing as &mMario!", NULL, NULL, NULL);
+	}
 
 	String_AppendConst(&Server_->AppName, " + Classic64 Mario 64 WIP");
 
