@@ -677,6 +677,7 @@ void marioTick(struct ScheduledTask* task)
 			else
 			{
 				// mario was spawned, intialize the instance struct and put everything in there
+				sm64_set_mario_faceangle(ID, (int16_t)((-Entities_->List[i]->Yaw + 180) / 180 * 32768.0f));
 				marioInstances[i] = (struct MarioInstance*)malloc(sizeof(struct MarioInstance));
 				marioInstances[i]->ID = ID;
 				memcpy(&marioInstances[i]->surfaces, surfaces, sizeof(surfaces));

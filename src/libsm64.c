@@ -375,6 +375,15 @@ SM64_LIB_FN void sm64_set_mario_angle(int32_t marioId, int16_t x, int16_t y, int
 	vec3s_set(gMarioState->marioObj->header.gfx.angle, 0, gMarioState->faceAngle[1], 0);
 }
 
+SM64_LIB_FN void sm64_set_mario_faceangle(int32_t marioId, int16_t y)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
+	gMarioState->faceAngle[1] = y;
+	vec3s_set(gMarioState->marioObj->header.gfx.angle, 0, gMarioState->faceAngle[1], 0);
+}
+
 SM64_LIB_FN void sm64_set_mario_velocity(int32_t marioId, float x, float y, float z)
 {
 	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
