@@ -1,8 +1,8 @@
-default: lib
+default: debug
 
 CC      := gcc
 CXX 	:= g++
-CFLAGS  := -g -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
+CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
 LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC
 ifeq ($(OS),Windows_NT)
@@ -69,8 +69,14 @@ else
 	$(CC) -o $@ $(TEST_OBJS) $(LIB_FILE) -lGLEW -lGL -lSDL2 -lSDL2main -lm
 endif
 
+debug: CFLAGS += -g
+debug: LDFLAGS += -g
+debug: $(LIB_FILE) $(LIB_H_FILE)
 
-lib: $(LIB_FILE) $(LIB_H_FILE)
+# libsm64 refuses to work with -O3 and -O2
+release: CFLAGS += -O1
+release: LDFLAGS += -O1
+release: $(LIB_FILE) $(LIB_H_FILE)
 
 test: $(TEST_FILE) $(LIB_H_FILE)
 
