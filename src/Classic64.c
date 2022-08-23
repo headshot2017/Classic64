@@ -714,8 +714,8 @@ void marioTick(struct ScheduledTask* task)
 				if (moved)
 				{
 					float dir = atan2(newPos.Z - obj->lastPos.Z, newPos.X - obj->lastPos.X);
-					obj->input.stickX = -cos(dir);
-					obj->input.stickY = -sin(dir);
+					obj->input.stickX = -Math_Cos(dir);
+					obj->input.stickY = -Math_Sin(dir);
 				}
 				else
 					obj->input.stickX = obj->input.stickY = 0;
@@ -893,8 +893,16 @@ void selfMarioTick(struct ScheduledTask* task)
 
 	obj->input.stickX = Math_Cos(dir) * spd;
 	obj->input.stickY = Math_Sin(dir) * spd;
-	obj->input.camLookX = (update.Pos.X - Camera_->CurrentPos.X);
-	obj->input.camLookZ = (update.Pos.Z - Camera_->CurrentPos.Z);
+	if (Camera_->Active->isThirdPerson)
+	{
+		obj->input.camLookX = (update.Pos.X - Camera_->CurrentPos.X);
+		obj->input.camLookZ = (update.Pos.Z - Camera_->CurrentPos.Z);
+	}
+	else
+	{
+		obj->input.camLookX = (update.Pos.X - Camera_->CurrentPos.X) + (Math_Sin((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
+		obj->input.camLookZ = (update.Pos.Z - Camera_->CurrentPos.Z) + (Math_Cos((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
+	}
 	obj->input.buttonA = KeyBind_IsPressed(KEYBIND_JUMP);
 	obj->input.buttonB = KeyBind_IsPressed(KEYBIND_DELETE_BLOCK);
 	obj->input.buttonZ = KeyBind_IsPressed(KEYBIND_SPEED);
