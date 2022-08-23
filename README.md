@@ -3,7 +3,7 @@ A plugin for [ClassiCube](https://classicube.net) which uses libsm64 to insert a
 
 ![Hey stinky](screenshot.png)
 
-This is still a work in progress!
+This is still a work in progress! There is no download available yet. However, you can compile from source code and play around with it.
 
 [libsm64 audio fork by ckosmic](https://github.com/ckosmic/libsm64/tree/audio)<br/>
 This project was not created by, or is related with the developers of the Minecraft mod "Retro64".<br/>
