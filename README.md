@@ -33,8 +33,6 @@ To turn into Mario, run the command `/model mario64`. This will let everyone on 
 If you are on a server with hacks enabled (flying, speed, etc) but the "/model" command is not allowed, you can run the client-side command `/client mario64 force`, at the cost that nobody will see your Mario model.
 
 ## Known issues
-* Sometimes, if your selected slot on the hotbar is empty (no block on hand, when your hand is visible), while playing as Mario in first person camera, the game might crash.
-  * Might be happening when using the default Steve skin?
 * Resizing, maximizing or going fullscreen on Direct3D9 builds of ClassiCube with this plugin will crash the game. "Error recreating D3D9 context"
 * ~When switching from the Mario model back to the default model, chances are the game will crash. Happens on Direct3D9 and OpenGL builds.~ Temporarily fixed
 * If the game crashes when starting:

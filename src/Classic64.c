@@ -211,14 +211,14 @@ static void marioModel_GetTransform(struct Entity* entity, Vec3 pos, struct Matr
 	Matrix_MulBy(m, &tmp);
 }
 
+static struct ModelTex unused_tex = { "char.png" }; // without this, the game crashes in first person view with nothing held in hand
 static void marioModel_DrawArm(struct Entity* entity) {}
 static void marioModel_MakeParts(void) {}
 static float marioModel_GetNameY(struct Entity* e) { return 1+0.25f; }
 static float marioModel_GetEyeY(struct Entity* e)  { return 1; }
 static void marioModel_GetSize(struct Entity* e) {e->Size = (Vec3) { 0.5f, 1, 0.5f };}
 static void marioModel_GetBounds(struct Entity* e) {AABB_Make(&e->ModelAABB, &e->Position, &e->Size);}
-static struct ModelVertex mario_unused_vertices[1]; // without this, the game crashes in first person view with nothing held in hand
-static struct Model mario_model = { "mario64", mario_unused_vertices, NULL,
+static struct Model mario_model = { "mario64", NULL, &unused_tex,
 	marioModel_MakeParts, marioModel_Draw,
 	marioModel_GetNameY,  marioModel_GetEyeY,
 	marioModel_GetSize,   marioModel_GetBounds
@@ -229,7 +229,7 @@ static struct Model* marioModel_GetInstance(void) {
 	mario_model.GetTransform = marioModel_GetTransform;
 	mario_model.DrawArm = marioModel_DrawArm;
 	mario_model.shadowScale = 0.85f;
-	mario_model.usesHumanSkin = true; // without this, the game crashes in first person view with nothing held in hand
+	mario_model.usesHumanSkin = false;
 	mario_model.bobbing = false;
 	return &mario_model;
 }
