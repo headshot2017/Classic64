@@ -1,4 +1,7 @@
 #ifdef _WIN32
+	#define _WIN32_WINNT 0x0600
+	#include <windows.h>
+
 	#define CC_API __declspec(dllimport)
 	#define CC_VAR __declspec(dllimport)
 	#define EXPORT __declspec(dllexport)
@@ -14,7 +17,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <string.h>
 
 #include "libsm64.h"

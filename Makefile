@@ -6,7 +6,7 @@ CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSI
 LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC
 ifeq ($(OS),Windows_NT)
-LDFLAGS := $(LDFLAGS) -mwindows
+LDFLAGS := $(LDFLAGS)
 ENDFLAGS := -static src/ClassiCube/libClassiCube.a -lole32 -lstdc++
 endif
 
