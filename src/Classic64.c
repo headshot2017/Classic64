@@ -10,7 +10,7 @@
 
 #define MARIO_SCALE 128.f
 #define IMARIO_SCALE 128
-#define DEBUGGER_MAX_VERTICES (9*3) * 4 * 6
+#define DEBUGGER_MAX_VERTICES 1024
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -179,7 +179,7 @@ struct MarioInstance // represents a Mario object in the plugin
 	GfxResourceID texturedVertexID;
 	uint16_t numTexturedTriangles;
 #ifdef CLASSIC64_DEBUG
-	struct VertexColoured debuggerVertices[DEBUGGER_MAX_VERTICES];
+	struct VertexTextured debuggerVertices[DEBUGGER_MAX_VERTICES];
 	uint16_t numDebuggerTriangles;
 	GfxResourceID debuggerVertexID;
 #endif
@@ -214,7 +214,6 @@ static void marioModel_Draw(struct Entity* p)
 #ifdef CLASSIC64_DEBUG
 			if (pluginOptions[PLUGINOPTION_SURFACE_DEBUGGER].value)
 			{
-				Gfx_SetVertexFormat(VERTEX_FORMAT_COLOURED);
 				Gfx_BindVb(obj->debuggerVertexID);
 				Gfx_DrawVb_IndexedTris(obj->numDebuggerTriangles);
 			}
@@ -685,13 +684,15 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 		{
 			for (j=0; j<objs[i].surfaceCount; j++)
 			{
+				float u[3] = {0.95, 0.96, 0.96};
+				float v[3] = {0, 0, 1};
 				for (int k=0; k<3; k++)
 				{
-					mario->debuggerVertices[vCount+k] = (struct VertexColoured) {
+					mario->debuggerVertices[vCount+k] = (struct VertexTextured) {
 						(objs[i].transform->aPosX - (x*MARIO_SCALE) + objs[i].libSurfaces[j].vertices[k][0]) / MARIO_SCALE - 0.5,
 						(objs[i].transform->aPosY - (y*MARIO_SCALE) + objs[i].libSurfaces[j].vertices[k][1]) / MARIO_SCALE,
 						(objs[i].transform->aPosZ - (z*MARIO_SCALE) + objs[i].libSurfaces[j].vertices[k][2]) / MARIO_SCALE - 0.5,
-						PackedCol_Make(0, 255, 0, 255)
+						PackedCol_Make(0, 255, 0, 255), u[k], v[k]
 					};
 				}
 				mario->debuggerVertices[vCount+3] = mario->debuggerVertices[vCount+2];
@@ -699,6 +700,7 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 			}
 		}
 		mario->numDebuggerTriangles = vCount;
+		printf("%d %d\n", mario->numDebuggerTriangles, DEBUGGER_MAX_VERTICES);
 		Gfx_SetDynamicVbData(mario->debuggerVertexID, &mario->debuggerVertices, DEBUGGER_MAX_VERTICES);
 	}
 #endif
@@ -741,7 +743,7 @@ void marioTick(struct ScheduledTask* task)
 				marioInstances[i]->texturedVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
 				marioInstances[i]->numTexturedTriangles = 0;
 #ifdef CLASSIC64_DEBUG
-				marioInstances[i]->debuggerVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_COLOURED, DEBUGGER_MAX_VERTICES);
+				marioInstances[i]->debuggerVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, DEBUGGER_MAX_VERTICES);
 #endif
 			}
 		}
