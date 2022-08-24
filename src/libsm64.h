@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "load_surfaces.h"
 
 #ifdef _WIN32
     #ifdef SM64_LIB_EXPORT
@@ -16,32 +17,11 @@
     #define SM64_LIB_FN
 #endif
 
-struct SM64Surface
-{
-    int16_t type;
-    int16_t force;
-    uint16_t terrain;
-    int32_t vertices[3][3];
-};
-
 struct SM64MarioInputs
 {
     float camLookX, camLookZ;
     float stickX, stickY;
     uint8_t buttonA, buttonB, buttonZ;
-};
-
-struct SM64ObjectTransform
-{
-    float position[3];
-    float eulerRotation[3];
-};
-
-struct SM64SurfaceObject
-{
-    struct SM64ObjectTransform transform;
-    uint32_t surfaceCount;
-    struct SM64Surface *surfaces;
 };
 
 struct SM64MarioState
@@ -145,6 +125,7 @@ extern SM64_LIB_FN void sm64_mario_interact_cap(int32_t marioId, uint32_t capFla
 extern SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject );
 extern SM64_LIB_FN void sm64_surface_object_move( uint32_t objectId, const struct SM64ObjectTransform *transform );
 extern SM64_LIB_FN void sm64_surface_object_delete( uint32_t objectId );
+extern SM64_LIB_FN struct LoadedSurfaceObject* sm64_get_all_surface_objects(uint32_t* count);
 
 extern SM64_LIB_FN void sm64_seq_player_play_sequence(uint8_t player, uint8_t seqId, uint16_t arg2);
 extern SM64_LIB_FN void sm64_play_music(uint8_t player, uint16_t seqArgs, uint16_t fadeTimer);

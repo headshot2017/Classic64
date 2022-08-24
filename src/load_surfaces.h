@@ -1,7 +1,15 @@
 #pragma once
 
 #include "decomp/include/types.h"
-#include "libsm64.h"
+#include "surface_types.h"
+
+struct LoadedSurfaceObject
+{
+    struct SurfaceObjectTransform *transform;
+    uint32_t surfaceCount;
+    struct SM64Surface *libSurfaces;
+    struct Surface *engineSurfaces;
+};
 
 extern uint32_t loaded_surface_iter_group_count( void );
 extern uint32_t loaded_surface_iter_group_size( uint32_t groupIndex );
@@ -13,3 +21,5 @@ extern void surface_object_update_transform( uint32_t objId, const struct SM64Ob
 extern struct SurfaceObjectTransform *surfaces_object_get_transform_ptr( uint32_t objId );
 extern void surfaces_unload_object( uint32_t objId );
 extern void surfaces_unload_all( void );
+
+struct LoadedSurfaceObject* get_all_surface_objects(uint32_t* count);

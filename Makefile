@@ -69,7 +69,7 @@ else
 	$(CC) -o $@ $(TEST_OBJS) $(LIB_FILE) -lGLEW -lGL -lSDL2 -lSDL2main -lm
 endif
 
-debug: CFLAGS += -g
+debug: CFLAGS += -g -DCLASSIC64_DEBUG
 debug: LDFLAGS += -g
 debug: $(LIB_FILE) $(LIB_H_FILE)
 

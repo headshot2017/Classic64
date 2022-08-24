@@ -549,6 +549,11 @@ SM64_LIB_FN void sm64_surface_object_delete( uint32_t objectId )
     surfaces_unload_object( objectId );
 }
 
+SM64_LIB_FN struct LoadedSurfaceObject* sm64_get_all_surface_objects(uint32_t* count)
+{
+	return get_all_surface_objects(count);
+}
+
 SM64_LIB_FN void sm64_seq_player_play_sequence(uint8_t player, uint8_t seqId, uint16_t arg2)
 {
     seq_player_play_sequence(player,seqId,arg2);

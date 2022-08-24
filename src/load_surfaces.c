@@ -11,14 +11,6 @@
 
 #include "debug_print.h"
 
-struct LoadedSurfaceObject
-{
-    struct SurfaceObjectTransform *transform;
-    uint32_t surfaceCount;
-    struct SM64Surface *libSurfaces;
-    struct Surface *engineSurfaces;
-};
-
 static uint32_t s_static_surface_count = 0;
 static struct Surface *s_static_surface_list = NULL;
 
@@ -334,4 +326,10 @@ void surfaces_unload_all( void )
     free( s_surface_object_list );
     s_surface_object_count = 0;
     s_surface_object_list = NULL;
+}
+
+struct LoadedSurfaceObject* get_all_surface_objects(uint32_t* count)
+{
+	*count = s_surface_object_count;
+	return s_surface_object_list;
 }
