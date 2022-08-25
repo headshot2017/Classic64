@@ -69,6 +69,7 @@ static struct _CameraData* Camera_;
 static struct _GuiData* Gui_;
 static struct _Lighting* Lighting_;
 static struct _ChatEventsList* ChatEvents_;
+static struct _GfxEventsList* GfxEvents_;
 
 bool isBlockSolid(BlockID block)
 {
@@ -263,6 +264,40 @@ void OnChatMessage(void* obj, const cc_string* msg, int msgType)
 	
 }
 
+void OnContextLost(void* obj)
+{
+	Gfx_DeleteTexture(&marioTextureID);
+	for (int i=0; i<256; i++)
+	{
+		if (marioInstances[i])
+		{
+			struct MarioInstance* obj = marioInstances[i];
+			Gfx_DeleteDynamicVb(&obj->vertexID);
+			Gfx_DeleteDynamicVb(&obj->texturedVertexID);
+#ifdef CLASSIC64_DEBUG
+			Gfx_DeleteDynamicVb(&obj->debuggerVertexID);
+#endif
+		}
+	}
+}
+
+void OnContextRecreated(void* obj)
+{
+	marioTextureID = Gfx_CreateTexture(&marioBitmap, 0, false);
+	for (int i=0; i<256; i++)
+	{
+		if (marioInstances[i])
+		{
+			struct MarioInstance* obj = marioInstances[i];
+			obj->vertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
+			obj->texturedVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
+#ifdef CLASSIC64_DEBUG
+			obj->debuggerVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, DEBUGGER_MAX_VERTICES);
+#endif
+		}
+	}
+}
+
 // chat command
 static void OnMarioClientCmd(const cc_string* args, int argsCount)
 {
@@ -455,10 +490,10 @@ void deleteMario(int i)
 	free(obj->geometry.color);
 	free(obj->geometry.normal);
 	free(obj->geometry.uv);
-	//Gfx_DeleteDynamicVb(obj->vertexID);
-	//Gfx_DeleteDynamicVb(obj->texturedVertexID);
+	Gfx_DeleteDynamicVb(&obj->vertexID);
+	Gfx_DeleteDynamicVb(&obj->texturedVertexID);
 #ifdef CLASSIC64_DEBUG
-	//Gfx_DeleteDynamicVb(obj->debuggerVertexID);
+	Gfx_DeleteDynamicVb(&obj->debuggerVertexID);
 #endif
 
 	free(marioInstances[i]);
@@ -978,7 +1013,6 @@ static void Classic64_Init()
 
 	sm64_global_terminate();
 	sm64_global_init(romBuffer, marioTextureUint8, NULL);
-	f = fopen("texture.raw", "wb");
 	for (int i=0; i<SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT; i++) // copy texture to classicube bitmap
 	{
 		int x = i % 1024;
@@ -1004,13 +1038,11 @@ static void Classic64_Init()
 			// fill X pos above 704 with white, for use with untextured (colored) triangles
 			marioBitmap.scan0[i] = 255 + (255 << 8) + (255 << 16) + (255 << 24);
 		}
-		fwrite(&marioBitmap.scan0[i], sizeof(BitmapCol), 1, f);
 	}
-	fclose(f);
 	free(marioTextureUint8);
 	free(romBuffer);
 
-	marioTextureID = Gfx_CreateTexture(&marioBitmap, TEXTURE_FLAG_MANAGED, false);
+	marioTextureID = Gfx_CreateTexture(&marioBitmap, 0, false);
 
 	SendChat("&aSuper Mario 64 US ROM loaded!", NULL, NULL, NULL);
 	if (!pluginOptions[PLUGINOPTION_FIRST_USE].value)
@@ -1027,6 +1059,8 @@ static void Classic64_Init()
 
 	Model_Register(marioModel_GetInstance());
 	Event_Register_(&ChatEvents_->ChatReceived, NULL, OnChatMessage);
+	Event_Register_(&GfxEvents_->ContextLost, NULL, OnContextLost);
+	Event_Register_(&GfxEvents_->ContextRecreated, NULL, OnContextRecreated);
 
 	ScheduledTask_Add(1./30, marioTick);
 	ScheduledTask_Add(1./300, selfMarioTick);
@@ -1103,4 +1137,5 @@ static void LoadSymbolsFromGame(void) {
 	LoadSymbol(Gui);
 	LoadSymbol(Lighting);
 	LoadSymbol(ChatEvents);
+	LoadSymbol(GfxEvents);
 }
