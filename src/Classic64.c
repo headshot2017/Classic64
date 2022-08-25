@@ -734,7 +734,7 @@ void marioTick(struct ScheduledTask* task)
 				sm64_set_mario_position(obj->ID, newPos.X, newPos.Y, newPos.Z);
 				obj->input.buttonA = (newPos.Y - obj->lastPos.Y > 0);
 
-				bool moved = (newPos.Z - obj->lastPos.Z) && (newPos.X - obj->lastPos.X);
+				bool moved = (newPos.Z - obj->lastPos.Z) || (newPos.X - obj->lastPos.X);
 				if (moved)
 				{
 					float dir = atan2(newPos.Z - obj->lastPos.Z, newPos.X - obj->lastPos.X);
