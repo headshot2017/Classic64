@@ -457,6 +457,9 @@ void deleteMario(int i)
 	free(obj->geometry.uv);
 	//Gfx_DeleteDynamicVb(obj->vertexID);
 	//Gfx_DeleteDynamicVb(obj->texturedVertexID);
+#ifdef CLASSIC64_DEBUG
+	//Gfx_DeleteDynamicVb(obj->debuggerVertexID);
+#endif
 
 	free(marioInstances[i]);
 	marioInstances[i] = 0;
@@ -1007,7 +1010,7 @@ static void Classic64_Init()
 	free(marioTextureUint8);
 	free(romBuffer);
 
-	marioTextureID = Gfx_CreateTexture(&marioBitmap, 0, false);
+	marioTextureID = Gfx_CreateTexture(&marioBitmap, TEXTURE_FLAG_MANAGED, false);
 
 	SendChat("&aSuper Mario 64 US ROM loaded!", NULL, NULL, NULL);
 	if (!pluginOptions[PLUGINOPTION_FIRST_USE].value)
