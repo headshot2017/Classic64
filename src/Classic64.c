@@ -613,7 +613,7 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 			}
 
 			// get block at floor
-			for (yadd=-1; ; yadd--)
+			for (yadd=-1; y+yadd>=0; yadd--)
 			{
 				if (addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget)) break;
 			}
