@@ -681,21 +681,44 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 		struct MarioInstance* mario = marioInstances[i];
 		uint32_t objCount = 0, vCount = 0;
 		struct LoadedSurfaceObject* objs = sm64_get_all_surface_objects(&objCount);
+
+		float u[3] = {0.95, 0.96, 0.96};
+		float v[3] = {0, 0, 1};
+		bool bgr = (pluginOptions[PLUGINOPTION_BGR].value);
+
 		for (uint32_t i=0; i<objCount; i++)
 		{
 			for (j=0; j<objs[i].surfaceCount; j++)
 			{
-				float u[3] = {0.95, 0.96, 0.96};
-				float v[3] = {0, 0, 1};
 				for (int k=0; k<3; k++)
 				{
 					mario->debuggerVertices[vCount+k] = (struct VertexTextured) {
-						(objs[i].transform->aPosX - (x*MARIO_SCALE) + objs[i].libSurfaces[j].vertices[k][0]) / MARIO_SCALE - 0.5,
-						(objs[i].transform->aPosY - (y*MARIO_SCALE) + objs[i].libSurfaces[j].vertices[k][1]) / MARIO_SCALE,
-						(objs[i].transform->aPosZ - (z*MARIO_SCALE) + objs[i].libSurfaces[j].vertices[k][2]) / MARIO_SCALE - 0.5,
+						(objs[i].transform->aPosX - (mario->state.position[0]) + objs[i].libSurfaces[j].vertices[k][0]) / MARIO_SCALE,
+						(objs[i].transform->aPosY - (mario->state.position[1]) + objs[i].libSurfaces[j].vertices[k][1]) / MARIO_SCALE,
+						(objs[i].transform->aPosZ - (mario->state.position[2]) + objs[i].libSurfaces[j].vertices[k][2]) / MARIO_SCALE,
 						PackedCol_Make(0, 255, 0, 255), u[k], v[k]
 					};
 				}
+
+				if (mario->debuggerVertices[vCount+0].X == mario->debuggerVertices[vCount+1].X &&
+				    mario->debuggerVertices[vCount+1].X == mario->debuggerVertices[vCount+2].X &&
+					mario->debuggerVertices[vCount+0].X == mario->debuggerVertices[vCount+2].X) // X is red
+				{
+					mario->debuggerVertices[vCount].Col = mario->debuggerVertices[vCount+1].Col = mario->debuggerVertices[vCount+2].Col = PackedCol_Make(bgr?0:255, 0, bgr?255:0, 255);
+				}
+				else if (mario->debuggerVertices[vCount+0].Y == mario->debuggerVertices[vCount+1].Y &&
+				         mario->debuggerVertices[vCount+1].Y == mario->debuggerVertices[vCount+2].Y &&
+					     mario->debuggerVertices[vCount+0].Y == mario->debuggerVertices[vCount+2].Y) // Y is green
+				{
+					mario->debuggerVertices[vCount].Col = mario->debuggerVertices[vCount+1].Col = mario->debuggerVertices[vCount+2].Col = PackedCol_Make(0, 255, 0, 255);
+				}
+				else if (mario->debuggerVertices[vCount+0].Z == mario->debuggerVertices[vCount+1].Z &&
+				         mario->debuggerVertices[vCount+1].Z == mario->debuggerVertices[vCount+2].Z &&
+					     mario->debuggerVertices[vCount+0].Z == mario->debuggerVertices[vCount+2].Z) // Y is green
+				{
+					mario->debuggerVertices[vCount].Col = mario->debuggerVertices[vCount+1].Col = mario->debuggerVertices[vCount+2].Col = PackedCol_Make(bgr?255:0, 0, bgr?0:255, 255);
+				}
+
 				mario->debuggerVertices[vCount+3] = mario->debuggerVertices[vCount+2];
 				vCount += 4;
 			}
