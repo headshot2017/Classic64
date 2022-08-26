@@ -44,11 +44,11 @@
 #define sign(x) ((x>0)?1:(x<0)?-1:0)
 
 // shortcut to log messages to chat
-static void SendChat(const char* format, const void* arg1, const void* arg2, const void* arg3) {
+static void SendChat(const char* format, const void* arg1, const void* arg2, const void* arg3, const void* arg4) {
 	cc_string msg; char msgBuffer[256];
 	String_InitArray(msg, msgBuffer);
 
-	String_Format3(&msg, format, arg1, arg2, arg3);
+	String_Format4(&msg, format, arg1, arg2, arg3, arg4);
 	Chat_Add(&msg);
 }
 
@@ -83,54 +83,117 @@ enum
 	PLUGINOPTION_HURT,
 	PLUGINOPTION_CAMERA,
 	PLUGINOPTION_BGR,
+	PLUGINOPTION_COLOR_OVERALLS,
+	PLUGINOPTION_COLOR_SHIRT_HAT,
+	PLUGINOPTION_COLOR_SKIN,
+	PLUGINOPTION_COLOR_HAIR,
+	PLUGINOPTION_COLOR_GLOVES,
+	PLUGINOPTION_COLOR_SHOES,
 #ifdef CLASSIC64_DEBUG
 	PLUGINOPTION_SURFACE_DEBUGGER,
 #endif
-	PLUGINOPTIONS_MAX
+	PLUGINOPTIONS_MAX,
+
+	PLUGINOPTION_VALUE_NUMBER=0,
+	PLUGINOPTION_VALUE_BOOL,
+	PLUGINOPTION_VALUE_RGB
+};
+
+const cc_string usageStrings[] = {
+	String_FromConst("<number>"),
+	String_FromConst("<on/off>"),
+	String_FromConst("<red 0/255> <green 0/255> <blue 0/255>"),
+};
+
+struct RGBCol
+{
+	uint8_t r, g, b;
+};
+
+const struct RGBCol defaultColors[] = {
+	{0  , 0  , 255}, // Overalls
+	{255, 0  , 0  }, // Shirt/Hat
+	{254, 193, 121}, // Skin
+	{114, 28 , 14 }, // Hair	
+	{255, 255, 255}, // Gloves
+	{115, 6  , 0  }, // Shoes
 };
 
 struct PluginOption {
 	cc_string name;
-	cc_string usage;
 	cc_string desc[3];
 	int descLines;
-	int value;
+	int valueType;
+	union ValueUnion
+	{
+		int num;
+		bool on;
+		struct RGBCol col;
+	} value;
 	bool hidden;
 } pluginOptions[] = {
 	{
 		String_FromConst("first_use"),
-		String_FromConst(""),
 		{String_FromConst("")},
-		1, 0, true
+		1, PLUGINOPTION_VALUE_BOOL, {.on=false}, true
 	},
 	{
 		String_FromConst("hurt"),
-		String_FromConst("<on/off>"),
 		{String_FromConst("&eSet whether Mario can get hurt.")},
-		1, 0, false
+		1, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
 	},
 	{
 		String_FromConst("camera"),
-		String_FromConst("<on/off>"),
 		{String_FromConst("&eRotate the camera automatically behind Mario.")},
-		1, 0, false
+		1, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
 	},
 	{
 		String_FromConst("bgr"),
-		String_FromConst("<on/off>"),
 		{
 			String_FromConst("&eSwap Mario's RGB colors with BGR."),
 			String_FromConst("&eThis is off by default."),
 			String_FromConst("&eIf Mario's colors appear inverted, change this setting."),
 		},
-		3, 0, false
+		3, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
 	},
+
+	// colors
+	{
+		String_FromConst("color_overalls"),
+		{String_FromConst("&eSet colors for Mario's overalls.")},
+		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[0]}, false
+	},
+	{
+		String_FromConst("color_shirthat"),
+		{String_FromConst("&eSet colors for Mario's shirt/hat.")},
+		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[1]}, false
+	},
+	{
+		String_FromConst("color_skin"),
+		{String_FromConst("&eSet colors for Mario's skin.")},
+		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[2]}, false
+	},
+	{
+		String_FromConst("color_hair"),
+		{String_FromConst("&eSet colors for Mario's hair.")},
+		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[3]}, false
+	},
+	{
+		String_FromConst("color_gloves"),
+		{String_FromConst("&eSet colors for Mario's gloves.")},
+		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[4]}, false
+	},
+	{
+		String_FromConst("color_shoes"),
+		{String_FromConst("&eSet colors for Mario's shoes.")},
+		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[5]}, false
+	},
+
 #ifdef CLASSIC64_DEBUG
 	{
 		String_FromConst("surface_debugger"),
-		String_FromConst("<on/off>"),
-		{String_FromConst("Toggle the SM64 surface debugger")},
-		1, 0, false
+		{String_FromConst("&eToggle the SM64 surface debugger.")},
+		1, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
 	}
 #endif
 };
@@ -139,7 +202,21 @@ void saveSettings()
 {
 	FILE *f = fopen("Classic64.cfg", "w");
 	for (int i=0; i<PLUGINOPTIONS_MAX; i++)
-		fprintf(f, "%s: %d\n", pluginOptions[i].name.buffer, pluginOptions[i].value);
+	{
+		fprintf(f, "%s: ", pluginOptions[i].name.buffer);
+		switch(pluginOptions[i].valueType)
+		{
+			case PLUGINOPTION_VALUE_BOOL:
+				fprintf(f, "%s\n", (pluginOptions[i].value.on) ? "on" : "off");
+				break;
+			case PLUGINOPTION_VALUE_NUMBER:
+				fprintf(f, "%d\n", pluginOptions[i].value.num);
+				break;
+			case PLUGINOPTION_VALUE_RGB:
+				fprintf(f, "%d,%d,%d\n", pluginOptions[i].value.col.r, pluginOptions[i].value.col.g, pluginOptions[i].value.col.b);
+				break;
+		}
+	}
 	fclose(f);
 }
 
@@ -158,7 +235,24 @@ void loadSettings()
 		{
 			if (strcmp(name, pluginOptions[i].name.buffer) == 0)
 			{
-				pluginOptions[i].value = atoi(value);
+				switch(pluginOptions[i].valueType)
+				{
+					case PLUGINOPTION_VALUE_BOOL:
+						pluginOptions[i].value.on = (strcmp(value, "on") == 0);
+						break;
+					case PLUGINOPTION_VALUE_NUMBER:
+						pluginOptions[i].value.num = atoi(value);
+						break;
+					case PLUGINOPTION_VALUE_RGB:
+						{
+							char *r = strtok(value, ",");
+							char *g = strtok(NULL, ",");
+							char *b = strtok(NULL, ",");
+							char *ptr;
+							pluginOptions[i].value.col = (struct RGBCol){strtoul(r, &ptr, 10), strtoul(g, &ptr, 10), strtoul(b, &ptr, 10)};
+						}
+						break;
+				}
 				continue;
 			}
 		}
@@ -218,7 +312,7 @@ static void marioModel_Draw(struct Entity* p)
 			Gfx_DrawVb_IndexedTris(4 * obj->numTexturedTriangles);
 
 #ifdef CLASSIC64_DEBUG
-			if (pluginOptions[PLUGINOPTION_SURFACE_DEBUGGER].value)
+			if (pluginOptions[PLUGINOPTION_SURFACE_DEBUGGER].value.on)
 			{
 				Gfx_BindVb(obj->debuggerVertexID);
 				Gfx_DrawVb_IndexedTris(obj->numDebuggerTriangles);
@@ -267,7 +361,7 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 	cc_string off = String_FromConst("off");
 	if (!argsCount || String_Compare(&args[0], &empty) == 0)
 	{
-		SendChat("&cSee /client help mario64 for available options", NULL, NULL, NULL);
+		SendChat("&cSee /client help mario64 for available options", NULL, NULL, NULL, NULL);
 		return;
 	}
 
@@ -283,16 +377,16 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 	{
 		if (argsCount < 2)
 		{
-			SendChat("&a/client mario64 music <id 0-33>", NULL, NULL, NULL);
-			SendChat("&ePlay music from Super Mario 64.", NULL, NULL, NULL);
-			SendChat("&eTo stop music, use music ID 0.", NULL, NULL, NULL);
+			SendChat("&a/client mario64 music <id 0-33>", NULL, NULL, NULL, NULL);
+			SendChat("&ePlay music from Super Mario 64.", NULL, NULL, NULL, NULL);
+			SendChat("&eTo stop music, use music ID 0.", NULL, NULL, NULL, NULL);
 			return;
 		}
 
 		cc_uint8 music;
 		if (!Convert_ParseUInt8(&args[1], &music) || music >= 0x22)
 		{
-			SendChat("&cInvalid music ID", NULL, NULL, NULL);
+			SendChat("&cInvalid music ID", NULL, NULL, NULL, NULL);
 			return;
 		}
 
@@ -304,15 +398,15 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 	{
 		if (argsCount < 2)
 		{
-			SendChat("&a/client mario64 cap <option>", NULL, NULL, NULL);
-			SendChat("&eChange Mario's cap.", NULL, NULL, NULL);
-			SendChat("&eOptions: off, on, wing, metal", NULL, NULL, NULL);
+			SendChat("&a/client mario64 cap <option>", NULL, NULL, NULL, NULL);
+			SendChat("&eChange Mario's cap.", NULL, NULL, NULL, NULL);
+			SendChat("&eOptions: off, on, wing, metal", NULL, NULL, NULL, NULL);
 			return;
 		}
 
 		if (!marioInstances[ENTITIES_SELF_ID])
 		{
-			SendChat("&cSwitch to Mario first", NULL, NULL, NULL);
+			SendChat("&cSwitch to Mario first", NULL, NULL, NULL, NULL);
 			return;
 		}
 
@@ -335,14 +429,14 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 				return;
 			}
 		}
-		SendChat("&cUnknown cap \"%s\"", &args[1], NULL, NULL);
+		SendChat("&cUnknown cap \"%s\"", &args[1], NULL, NULL, NULL);
 		return;
 	}
 	else if (String_Compare(&args[0], &options[2]) == 0) // kill mario
 	{
 		if (!marioInstances[ENTITIES_SELF_ID])
 		{
-			SendChat("&cSwitch to Mario first", NULL, NULL, NULL);
+			SendChat("&cSwitch to Mario first", NULL, NULL, NULL, NULL);
 			return;
 		}
 		sm64_mario_kill(marioInstances[ENTITIES_SELF_ID]->ID);
@@ -352,7 +446,7 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 	{
 		if (String_ContainsConst(&Server_->MOTD, "-hax") || String_ContainsConst(&Server_->MOTD, "-fly"))
 		{
-			SendChat("&cHacks are disabled, cannot switch to Mario", NULL, NULL, NULL);
+			SendChat("&cHacks are disabled, cannot switch to Mario", NULL, NULL, NULL, NULL);
 			return;
 		}
 		cc_string model = String_FromConst( (strcmp(Entities_->List[ENTITIES_SELF_ID]->Model->name, "mario64") == 0) ? "human" : "mario64" );
@@ -363,18 +457,28 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 	{
 		if (argsCount < 2)
 		{
-			SendChat("&a/client mario64 settings <option>", NULL, NULL, NULL);
-			SendChat("&eChange plugin settings.", NULL, NULL, NULL);
+			SendChat("&a/client mario64 settings <option>", NULL, NULL, NULL, NULL);
+			SendChat("&eChange plugin settings.", NULL, NULL, NULL, NULL);
 
 			char msgBuffer[256];
+			int printed = 0;
 			sprintf(msgBuffer, "&eAvailable settings: ");
 			for (int i=0; i<PLUGINOPTIONS_MAX; i++)
 			{
+				if (printed >= 5)
+				{
+					// multi lines
+					printed = 0;
+					SendChat(msgBuffer, NULL, NULL, NULL, NULL);
+					sprintf(msgBuffer, "&e");
+				}
+
 				if (pluginOptions[i].hidden) continue;
 				strcat(msgBuffer, pluginOptions[i].name.buffer);
 				if (i != PLUGINOPTIONS_MAX-1) strcat(msgBuffer, ", ");
+				printed++;
 			}
-			SendChat(msgBuffer, NULL, NULL, NULL);
+			SendChat(msgBuffer, NULL, NULL, NULL, NULL);
 			return;
 		}
 
@@ -385,37 +489,83 @@ static void OnMarioClientCmd(const cc_string* args, int argsCount)
 			{
 				if (argsCount < 3)
 				{
-					SendChat("&a/client mario64 settings %s %s", &pluginOptions[i].name, &pluginOptions[i].usage, NULL);
-					for (int j=0; j<pluginOptions[i].descLines; j++) SendChat("%s", &pluginOptions[i].desc[j], NULL, NULL);
+					SendChat("&a/client mario64 settings %s %s", &pluginOptions[i].name, &usageStrings[pluginOptions[i].valueType], NULL, NULL);
+					for (int j=0; j<pluginOptions[i].descLines; j++) SendChat("%s", &pluginOptions[i].desc[j], NULL, NULL, NULL);
 
 					cc_string value; char valueBuf[32];
 					String_InitArray(value, valueBuf);
-					String_AppendInt(&value, pluginOptions[i].value);
+					switch(pluginOptions[i].valueType)
+					{
+						case PLUGINOPTION_VALUE_BOOL:
+							String_AppendConst(&value, (pluginOptions[i].value.on) ? "on" : "off");
+							break;
+						case PLUGINOPTION_VALUE_NUMBER:
+							String_AppendInt(&value, pluginOptions[i].value.num);
+							break;
+						case PLUGINOPTION_VALUE_RGB:
+							{
+								char colBuf[16];
+								sprintf(colBuf, "%d %d %d", pluginOptions[i].value.col.r, pluginOptions[i].value.col.g, pluginOptions[i].value.col.b);
+								String_AppendConst(&value, colBuf);
+							}
+							break;
+					}
 
-					SendChat("Current value: %s", &value, NULL, NULL);
+					SendChat("Current value: %s", &value, NULL, NULL, NULL);
 					return;
 				}
 
-				int value;
-				if (String_Compare(&args[2], &on) == 0) value = 1;
-				else if (String_Compare(&args[2], &off) == 0) value = 0;
-				else if (!Convert_ParseInt(&args[2], &value))
+				switch(pluginOptions[i].valueType)
 				{
-					SendChat("&cUnknown value \"%s\". Please enter 'on', 'off' or a number.", &args[2], NULL, NULL);
-					return;
+					case PLUGINOPTION_VALUE_BOOL:
+						if (String_Compare(&args[2], &on) == 0) pluginOptions[i].value.on = true;
+						else if (String_Compare(&args[2], &off) == 0) pluginOptions[i].value.on = false;
+						else
+						{
+							SendChat("&cUnknown value \"%s\". Please enter 'on' or 'off'.", &args[2], NULL, NULL, NULL);
+							return;
+						}
+
+						SendChat("&a%s: %s", &pluginOptions[i].name, &args[2], NULL, NULL);
+						break;
+
+					case PLUGINOPTION_VALUE_NUMBER:
+						if (!Convert_ParseInt(&args[2], &pluginOptions[i].value.num))
+						{
+							SendChat("&cUnknown value \"%s\". Please enter a number.", &args[2], NULL, NULL, NULL);
+							return;
+						}
+
+						SendChat("&a%s: %s", &pluginOptions[i].name, &args[2], NULL, NULL);
+						break;
+
+					case PLUGINOPTION_VALUE_RGB:
+						if (argsCount < 5)
+						{
+							SendChat("&cNot enough arguments. Please enter RGB values between 0 and 255.", NULL, NULL, NULL, NULL);
+							return;
+						}
+
+						if (!Convert_ParseUInt8(&args[2], &pluginOptions[i].value.col.r) || !Convert_ParseUInt8(&args[3], &pluginOptions[i].value.col.g) || !Convert_ParseUInt8(&args[4], &pluginOptions[i].value.col.b))
+						{
+							SendChat("&cParse failed. Please enter RGB number values between 0 and 255.", NULL, NULL, NULL, NULL);
+							return;
+						}
+
+						SendChat("&a%s: %s, %s, %s", &pluginOptions[i].name, &args[2], &args[3], &args[4]);
+						break;
 				}
-				pluginOptions[i].value = value;
-				SendChat("&a%s: %s", &pluginOptions[i].name, &args[2], NULL);
+
 				saveSettings();
 				return;
 			}
 		}
 
-		SendChat("&cUnknown setting \"%s\"", &args[1], NULL, NULL);
+		SendChat("&cUnknown setting \"%s\"", &args[1], NULL, NULL, NULL);
 		return;
 	}
 
-	SendChat("&cUnknown option \"%s\"", &args[0], NULL, NULL);
+	SendChat("&cUnknown option \"%s\"", &args[0], NULL, NULL, NULL);
 }
 
 static struct ChatCommand MarioClientCmd = {
@@ -628,7 +778,7 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 
 		float u[3] = {0.95, 0.96, 0.96};
 		float v[3] = {0, 0, 1};
-		bool bgr = (pluginOptions[PLUGINOPTION_BGR].value);
+		bool bgr = (pluginOptions[PLUGINOPTION_BGR].value.on);
 
 		for (uint32_t j=0; j<objCount; j++)
 		{
@@ -689,7 +839,7 @@ void marioTick(struct ScheduledTask* task)
 			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, 0,0,0,0);
 			if (ID == -1)
 			{
-				SendChat("&cFailed to spawn Mario", NULL, NULL, NULL);
+				SendChat("&cFailed to spawn Mario", NULL, NULL, NULL, NULL);
 			}
 			else
 			{
@@ -748,7 +898,7 @@ void marioTick(struct ScheduledTask* task)
 				obj->lastPos.X = obj->state.position[0]; obj->lastPos.Y = obj->state.position[1]; obj->lastPos.Z = obj->state.position[2];
 			}
 
-			if (!pluginOptions[PLUGINOPTION_HURT].value && sm64_mario_get_health(obj->ID) != 0xff) sm64_mario_set_health(obj->ID, 0x880);
+			if (!pluginOptions[PLUGINOPTION_HURT].value.on && sm64_mario_get_health(obj->ID) != 0xff) sm64_mario_set_health(obj->ID, 0x880);
 
 			// water
 			int yadd = 0;
@@ -766,7 +916,7 @@ void marioTick(struct ScheduledTask* task)
 			obj->currPos.Z = obj->state.position[2];
 
 			obj->numTexturedTriangles = 0;
-			bool bgr = (pluginOptions[PLUGINOPTION_BGR].value);
+			bool bgr = (pluginOptions[PLUGINOPTION_BGR].value.on);
 
 			// fix for 1.3.2 until a future release comes out with the lighting system refactor
 			PackedCol lightCol = (Lighting_) ? Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE) : Env_->SunCol;
@@ -844,7 +994,7 @@ void selfMarioTick(struct ScheduledTask* task)
 	update.Pos.Y = obj->state.position[1] / MARIO_SCALE;
 	update.Pos.Z = obj->state.position[2] / MARIO_SCALE;
 	update.RelativePos = false;
-	if (pluginOptions[PLUGINOPTION_CAMERA].value)
+	if (pluginOptions[PLUGINOPTION_CAMERA].value.on)
 	{
 		static float currYaw = 0;
 		currYaw = Entities_->List[ENTITIES_SELF_ID]->Yaw;
@@ -985,10 +1135,10 @@ static void Classic64_Init()
 	if (!f)
 	{
 		inited = false;
-		SendChat("&cSuper Mario 64 US ROM not found!", NULL, NULL, NULL);
-		SendChat("&cClassic64 will not function without it.", NULL, NULL, NULL);
-		SendChat("&cPlease supply a ROM with filename 'sm64.us.z64'", NULL, NULL, NULL);
-		SendChat("&cand place it inside the plugins folder.", NULL, NULL, NULL);
+		SendChat("&cSuper Mario 64 US ROM not found!", NULL, NULL, NULL, NULL);
+		SendChat("&cClassic64 will not function without it.", NULL, NULL, NULL, NULL);
+		SendChat("&cPlease supply a ROM with filename 'sm64.us.z64'", NULL, NULL, NULL, NULL);
+		SendChat("&cand place it inside the plugins folder.", NULL, NULL, NULL, NULL);
 		return;
 	}
 
@@ -1046,18 +1196,18 @@ static void Classic64_Init()
 
 	marioTextureID = Gfx_CreateTexture(&marioBitmap, 0, false);
 
-	SendChat("&aSuper Mario 64 US ROM loaded!", NULL, NULL, NULL);
-	if (!pluginOptions[PLUGINOPTION_FIRST_USE].value)
+	SendChat("&aSuper Mario 64 US ROM loaded!", NULL, NULL, NULL, NULL);
+	if (!pluginOptions[PLUGINOPTION_FIRST_USE].value.on)
 	{
 		// give a little tutorial
-		pluginOptions[PLUGINOPTION_FIRST_USE].value = 1;
+		pluginOptions[PLUGINOPTION_FIRST_USE].value.on = true;
 		saveSettings();
-		SendChat("&bTo get started, switch to Mario by using &m/model mario64", NULL, NULL, NULL);
-		SendChat("&bYou can find some extra commands by typing &m/client mario64", NULL, NULL, NULL);
-		SendChat("&bHave fun playing as &mMario!", NULL, NULL, NULL);
+		SendChat("&bTo get started, switch to Mario by using &e/model mario64", NULL, NULL, NULL, NULL);
+		SendChat("&bYou can find some extra commands by typing &e/client mario64", NULL, NULL, NULL, NULL);
+		SendChat("&bHave fun playing as Mario!", NULL, NULL, NULL, NULL);
 	}
 
-	String_AppendConst(&Server_->AppName, " + Classic64 Mario 64 WIP");
+	String_AppendConst(&Server_->AppName, " + Classic64 Mario64 v1.0");
 
 	Model_Register(marioModel_GetInstance());
 	Event_Register_(&ChatEvents_->ChatReceived, NULL, OnChatMessage);
