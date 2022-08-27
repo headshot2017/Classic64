@@ -73,7 +73,7 @@ static struct _GfxEventsList* GfxEvents_;
 
 bool isBlockSolid(BlockID block)
 {
-	return (block != 0 && (Blocks_->Collide[block] == COLLIDE_SOLID || Blocks_->Collide[block] == COLLIDE_ICE || Blocks_->Collide[block] == COLLIDE_SLIPPERY_ICE));
+	return (block != 0 && Blocks_->Collide[block] == COLLIDE_SOLID);
 }
 
 // plugin settings
@@ -614,7 +614,7 @@ void deleteMario(int i)
 bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget)
 {
 	BlockID block = World_SafeGetBlock(x, y, z);
-	if (block == 0 || (Blocks_->Collide[block] != COLLIDE_SOLID && Blocks_->Collide[block] != COLLIDE_ICE && Blocks_->Collide[block] != COLLIDE_SLIPPERY_ICE)) return false;
+	if (!isBlockSolid(block)) return false;
 
 	struct SM64SurfaceObject obj;
 	memset(&obj.transform, 0, sizeof(struct SM64ObjectTransform));
@@ -710,7 +710,10 @@ bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget)
 
 	for (int ind=0; ind<obj.surfaceCount; ind++)
 	{
-		obj.surfaces[ind].type = (Blocks_->Collide[block] == COLLIDE_ICE || Blocks_->Collide[block] == COLLIDE_SLIPPERY_ICE) ? SURFACE_ICE : SURFACE_DEFAULT;
+		obj.surfaces[ind].type =
+			(Blocks_->ExtendedCollide[block] == COLLIDE_ICE || Blocks_->ExtendedCollide[block] == COLLIDE_SLIPPERY_ICE) ? SURFACE_ICE :
+			(Blocks_->ExtendedCollide[block] == COLLIDE_LAVA) ? SURFACE_BURNING :
+			SURFACE_DEFAULT;
 		obj.surfaces[ind].force = 0;
 		if (obj.surfaces[ind].type == SURFACE_ICE) obj.surfaces[ind].terrain = TERRAIN_SLIDE;
 		else switch(Blocks_->StepSounds[block])
