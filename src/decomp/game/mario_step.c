@@ -263,8 +263,9 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
     f32 floorHeight;
     f32 waterLevel;
 
-    lowerWall = resolve_and_return_wall_collisions(nextPos, 30.0f, 24.0f);
-    upperWall = resolve_and_return_wall_collisions(nextPos, 60.0f, 50.0f);
+    // ClassiCube: let mario walk up slabs
+    //lowerWall = resolve_and_return_wall_collisions(nextPos, 30.0f, 24.0f);
+    upperWall = resolve_and_return_wall_collisions(nextPos, 65.0f, 50.0f); // old: 60.0f
 
     floorHeight = find_floor(nextPos[0], nextPos[1], nextPos[2], &floor);
     ceilHeight = vec3f_find_ceil(nextPos, floorHeight, &ceil);
