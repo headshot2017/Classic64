@@ -611,7 +611,7 @@ void deleteMario(int i)
 	marioInstances[i] = 0;
 }
 
-bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget)
+bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget, bool* moreBelow)
 {
 	BlockID block = World_SafeGetBlock(x, y, z);
 	if (!isBlockSolid(block)) return false;
@@ -624,86 +624,96 @@ bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget)
 	obj.surfaceCount = 0;
 	obj.surfaces = (struct SM64Surface*)malloc(sizeof(struct SM64Surface) * 6*2);
 
-	// block ground face
-	if (!World_SafeGetBlock(x, y+1, z) || !isBlockSolid(World_SafeGetBlock(x, y+1, z)))
-	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[0][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[0][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[1][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[1][2] = 0;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[2][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[2][2] = IMARIO_SCALE;
+	Vec3 *Min = &Blocks_->MinBB[block];
+	Vec3 *Max = &Blocks_->MaxBB[block];
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = 0; 				obj.surfaces[obj.surfaceCount+1].vertices[0][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[0][2] = 0;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[1][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[1][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[2][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[2][2] = 0;
+	BlockID up =		World_SafeGetBlock(x, y+1, z);
+	BlockID down =		World_SafeGetBlock(x, y-1, z);
+	BlockID left =		World_SafeGetBlock(x, y, z+1);
+	BlockID right =		World_SafeGetBlock(x, y, z-1);
+	BlockID back =		World_SafeGetBlock(x+1, y, z);
+	BlockID front =		World_SafeGetBlock(x-1, y, z);
+
+	// block ground face
+	if (!up || !isBlockSolid(up) || Blocks_->MinBB[up].Y != 0 || Blocks_->MinBB[up].X != 0 || Blocks_->MaxBB[up].X != 1 || Blocks_->MinBB[up].Z != 0 || Blocks_->MaxBB[up].Z != 1)
+	{
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->Z * IMARIO_SCALE;
+
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Min->X * IMARIO_SCALE; 	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->Z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// left (Z+)
-	if (!World_SafeGetBlock(x, y, z+1) || !isBlockSolid(World_SafeGetBlock(x, y, z+1)))
+	if (!left || !isBlockSolid(left) || Blocks_->MinBB[left].Z != 0 || Blocks_->MinBB[left].X != 0 || Blocks_->MaxBB[left].X != 1 || Blocks_->MinBB[left].Y != 0 || Blocks_->MaxBB[left].Y != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[0][1] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[0][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[1][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[1][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[2][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[2][2] = IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->Z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[0][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[0][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[1][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[1][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[2][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[2][2] = IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Max->Z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// right (Z-)
-	if (!World_SafeGetBlock(x, y, z-1) || !isBlockSolid(World_SafeGetBlock(x, y, z-1)))
+	if (!right || !isBlockSolid(right) || Blocks_->MaxBB[right].Z != 1 || Blocks_->MinBB[right].X != 0 || Blocks_->MaxBB[right].X != 1 || Blocks_->MinBB[right].Y != 0 || Blocks_->MaxBB[right].Y != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[0][1] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[0][2] = 0;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[1][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[1][2] = 0;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[2][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[2][2] = 0;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Min->Z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[0][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[0][2] = 0;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[1][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[1][2] = 0;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[2][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[2][2] = 0;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->Z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// back (X+)
-	if (!World_SafeGetBlock(x+1, y, z) || !isBlockSolid(World_SafeGetBlock(x+1, y, z)))
+	if (!back || !isBlockSolid(back) || Blocks_->MinBB[back].X != 0 || Blocks_->MinBB[back].Y != 0 || Blocks_->MaxBB[back].Y != 1 || Blocks_->MinBB[back].Z != 0 || Blocks_->MaxBB[back].Z != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[0][1] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[0][2] = 0;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[1][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[1][2] = 0;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[2][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[2][2] = IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->Z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[0][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[0][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[1][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[1][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[2][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[2][2] = 0;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->Z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// front (X-)
-	if (!World_SafeGetBlock(x-1, y, z) || !isBlockSolid(World_SafeGetBlock(x-1, y, z)))
+	if (!front || !isBlockSolid(front) || Blocks_->MaxBB[back].X != 1 || Blocks_->MinBB[front].Y != 0 || Blocks_->MaxBB[front].Y != 1 || Blocks_->MinBB[front].Z != 0 || Blocks_->MaxBB[front].Z != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[0][1] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[0][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[1][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[1][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[2][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[2][2] = 0;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Min->Z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[0][1] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[0][2] = 0;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[1][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[1][2] = 0;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[2][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[2][2] = IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Max->Z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// block bottom face
-	if (!World_SafeGetBlock(x, y-1, z) || !isBlockSolid(World_SafeGetBlock(x, y-1, z)))
+	if (!down || !isBlockSolid(down) || Blocks_->MaxBB[down].Y != 1 || Blocks_->MinBB[down].X != 0 || Blocks_->MaxBB[down].X != 1 || Blocks_->MinBB[down].Z != 0 || Blocks_->MaxBB[down].Z != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[0][1] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[0][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[1][1] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[1][2] = 0;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+0].vertices[2][1] = 0;				obj.surfaces[obj.surfaceCount+0].vertices[2][2] = IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->Z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[0][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[0][2] = 0;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = IMARIO_SCALE;		obj.surfaces[obj.surfaceCount+1].vertices[1][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[1][2] = IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[2][1] = 0;				obj.surfaces[obj.surfaceCount+1].vertices[2][2] = 0;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->Z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
@@ -742,6 +752,7 @@ bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget)
 	if (obj.surfaceCount)
 		arrayTarget[(*i)++] = sm64_surface_object_create(&obj);
 
+	if (moreBelow) *moreBelow = (Min->X != 0 || Max->X != 1 || Min->Z != 0 || Max->Z != 1);
 	free(obj.surfaces);
 	return true;
 }
@@ -761,13 +772,14 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 			for (yadd=2; yadd>=0; yadd--)
 			{
 				if (y+yadd < World_->Height)
-					addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget);
+					addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget, NULL);
 			}
 
 			// get block at floor
 			for (yadd=-1; y+yadd>=0; yadd--)
 			{
-				if (addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget)) break;
+				bool moreBelow = false;
+				if (addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget, &moreBelow) && !moreBelow) break;
 			}
 		}
 	}
