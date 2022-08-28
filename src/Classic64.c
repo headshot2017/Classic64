@@ -954,15 +954,15 @@ void marioTick(struct ScheduledTask* task)
 			// fix for 1.3.2 until a future release comes out with the lighting system refactor
 			PackedCol lightCol = (Lighting_) ? Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE) : Env_->SunCol;
 
-			for (int i=0; i<obj->geometry.numTrianglesUsed; i++)
+			for (int j=0; j<obj->geometry.numTrianglesUsed; j++)
 			{
-				bool hasTexture = (obj->geometry.uv[i*6+0] != 1 && obj->geometry.uv[i*6+1] != 1 && obj->geometry.uv[i*6+2] != 1 && obj->geometry.uv[i*6+3] != 1 && obj->geometry.uv[i*6+4] != 1 && obj->geometry.uv[i*6+5] != 1);
-				bool wingCap = (obj->state.flags & MARIO_WING_CAP && i >= obj->geometry.numTrianglesUsed-8 && i <= obj->geometry.numTrianglesUsed-1); // do not draw white rectangles around wingcap
+				bool hasTexture = (obj->geometry.uv[j*6+0] != 1 && obj->geometry.uv[j*6+1] != 1 && obj->geometry.uv[j*6+2] != 1 && obj->geometry.uv[j*6+3] != 1 && obj->geometry.uv[j*6+4] != 1 && obj->geometry.uv[j*6+5] != 1);
+				bool wingCap = (obj->state.flags & MARIO_WING_CAP && j >= obj->geometry.numTrianglesUsed-8 && j <= obj->geometry.numTrianglesUsed-1); // do not draw white rectangles around wingcap
 
-				uint8_t r = obj->geometry.color[i*9+0]*255;
-				uint8_t g = obj->geometry.color[i*9+1]*255;
-				uint8_t b = obj->geometry.color[i*9+2]*255;
-				if (customColors)
+				uint8_t r = obj->geometry.color[j*9+0]*255;
+				uint8_t g = obj->geometry.color[j*9+1]*255;
+				uint8_t b = obj->geometry.color[j*9+2]*255;
+				if (customColors && i == ENTITIES_SELF_ID) // only give yourself custom colors
 				{
 					for (int c = 0; c < 6; c++)
 					{
@@ -978,40 +978,40 @@ void marioTick(struct ScheduledTask* task)
 
 				PackedCol col = PackedCol_Tint(PackedCol_Make((bgr)?b:r, g, (bgr)?r:b, 255), lightCol);
 
-				obj->vertices[i*4+0] = (struct VertexTextured) {
-					(obj->geometry.position[i*9+0] - obj->state.position[0]) / MARIO_SCALE,
-					(obj->geometry.position[i*9+1] - obj->state.position[1]) / MARIO_SCALE,
-					(obj->geometry.position[i*9+2] - obj->state.position[2]) / MARIO_SCALE,
+				obj->vertices[j*4+0] = (struct VertexTextured) {
+					(obj->geometry.position[j*9+0] - obj->state.position[0]) / MARIO_SCALE,
+					(obj->geometry.position[j*9+1] - obj->state.position[1]) / MARIO_SCALE,
+					(obj->geometry.position[j*9+2] - obj->state.position[2]) / MARIO_SCALE,
 					col,
 					(wingCap) ? 0 : 0.95, (wingCap) ? 0.95 : 0
 				};
 
-				obj->vertices[i*4+1] = (struct VertexTextured) {
-					(obj->geometry.position[i*9+3] - obj->state.position[0]) / MARIO_SCALE,
-					(obj->geometry.position[i*9+4] - obj->state.position[1]) / MARIO_SCALE,
-					(obj->geometry.position[i*9+5] - obj->state.position[2]) / MARIO_SCALE,
+				obj->vertices[j*4+1] = (struct VertexTextured) {
+					(obj->geometry.position[j*9+3] - obj->state.position[0]) / MARIO_SCALE,
+					(obj->geometry.position[j*9+4] - obj->state.position[1]) / MARIO_SCALE,
+					(obj->geometry.position[j*9+5] - obj->state.position[2]) / MARIO_SCALE,
 					col,
 					(wingCap) ? 0 : 0.96, (wingCap) ? 0.96 : 0
 				};
 
-				obj->vertices[i*4+2] = (struct VertexTextured) {
-					(obj->geometry.position[i*9+6] - obj->state.position[0]) / MARIO_SCALE,
-					(obj->geometry.position[i*9+7] - obj->state.position[1]) / MARIO_SCALE,
-					(obj->geometry.position[i*9+8] - obj->state.position[2]) / MARIO_SCALE,
+				obj->vertices[j*4+2] = (struct VertexTextured) {
+					(obj->geometry.position[j*9+6] - obj->state.position[0]) / MARIO_SCALE,
+					(obj->geometry.position[j*9+7] - obj->state.position[1]) / MARIO_SCALE,
+					(obj->geometry.position[j*9+8] - obj->state.position[2]) / MARIO_SCALE,
 					col,
 					(wingCap) ? 0.01 : 0.96, (wingCap) ? 0.96 : 1
 				};
 
-				obj->vertices[i*4+3] = obj->vertices[i*4+2]; // WHY IS IT A QUAD?!?!?!?!? why does classicube use quads!??!?!??
+				obj->vertices[j*4+3] = obj->vertices[j*4+2]; // WHY IS IT A QUAD?!?!?!?!? why does classicube use quads!??!?!??
 
 				if (hasTexture)
 				{
-					for (int j=0; j<4; j++)
+					for (int k=0; k<4; k++)
 					{
-						obj->texturedVertices[obj->numTexturedTriangles*4+j] = (struct VertexTextured) {
-							obj->vertices[i*4+j].X, obj->vertices[i*4+j].Y, obj->vertices[i*4+j].Z,
+						obj->texturedVertices[obj->numTexturedTriangles*4+k] = (struct VertexTextured) {
+							obj->vertices[j*4+k].X, obj->vertices[j*4+k].Y, obj->vertices[j*4+k].Z,
 							PackedCol_Tint(PACKEDCOL_WHITE, lightCol),
-							obj->geometry.uv[i*6+(j*2+0)], obj->geometry.uv[i*6+(j*2+1)]
+							obj->geometry.uv[j*6+(k*2+0)], obj->geometry.uv[j*6+(k*2+1)]
 						};
 					}
 					obj->numTexturedTriangles++;
