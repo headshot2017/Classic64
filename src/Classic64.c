@@ -53,7 +53,10 @@ static void SendChat(const char* format, const void* arg1, const void* arg2, con
 }
 
 BlockID World_SafeGetBlock(int x, int y, int z) {
-	return World_Contains(x, y, z) ? World_GetBlock(x, y, z) : BLOCK_AIR;
+	return
+		World_Contains(x, y, z) ? World_GetBlock(x, y, z) :
+		(y < 0) ? BLOCK_BEDROCK :
+		BLOCK_AIR;
 }
 
 // classicube symbols
@@ -783,7 +786,7 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 			}
 
 			// get block at floor
-			for (yadd=-1; y+yadd>=0; yadd--)
+			for (yadd=-1; y+yadd>=-1; yadd--)
 			{
 				bool moreBelow = false;
 				if (addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget, &moreBelow) && !moreBelow) break;
