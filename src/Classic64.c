@@ -86,6 +86,7 @@ enum
 	PLUGINOPTION_HURT,
 	PLUGINOPTION_CAMERA,
 	PLUGINOPTION_BGR,
+	PLUGINOPTION_CUSTOM_COLORS,
 	PLUGINOPTION_COLOR_OVERALLS,
 	PLUGINOPTION_COLOR_SHIRT_HAT,
 	PLUGINOPTION_COLOR_SKIN,
@@ -159,37 +160,42 @@ struct PluginOption {
 		},
 		3, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
 	},
+	{
+		String_FromConst("custom_colors"),
+		{String_FromConst("&eWhether to use custom Mario colors.")},
+		1, PLUGINOPTION_VALUE_BOOL, {.on=true}, false
+	},
 
 	// colors
 	{
 		String_FromConst("color_overalls"),
 		{String_FromConst("&eSet colors for Mario's overalls.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[0]}, false
+		1, PLUGINOPTION_VALUE_RGB, {.col={0,0,255}}, false
 	},
 	{
 		String_FromConst("color_shirthat"),
 		{String_FromConst("&eSet colors for Mario's shirt/hat.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[1]}, false
+		1, PLUGINOPTION_VALUE_RGB, {.col={255,0,0}}, false
 	},
 	{
 		String_FromConst("color_skin"),
 		{String_FromConst("&eSet colors for Mario's skin.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[2]}, false
+		1, PLUGINOPTION_VALUE_RGB, {.col={254,193,121}}, false
 	},
 	{
 		String_FromConst("color_hair"),
 		{String_FromConst("&eSet colors for Mario's hair.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[3]}, false
+		1, PLUGINOPTION_VALUE_RGB, {.col={114,28,14}}, false
 	},
 	{
 		String_FromConst("color_gloves"),
 		{String_FromConst("&eSet colors for Mario's gloves.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[4]}, false
+		1, PLUGINOPTION_VALUE_RGB, {.col={255,255,255}}, false
 	},
 	{
 		String_FromConst("color_shoes"),
 		{String_FromConst("&eSet colors for Mario's shoes.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col=defaultColors[5]}, false
+		1, PLUGINOPTION_VALUE_RGB, {.col={115,6,0}}, false
 	},
 
 #ifdef CLASSIC64_DEBUG
@@ -230,6 +236,7 @@ void loadSettings()
 	char buf[256];
 	while (fgets(buf, sizeof(buf), f))
 	{
+		printf("'%s'\n", buf);
 		char *name = strtok(buf, ": ");
 		char *value = strtok(NULL, ": ");
 		if (value) value[strcspn(value, "\n")] = 0;
@@ -942,6 +949,7 @@ void marioTick(struct ScheduledTask* task)
 
 			obj->numTexturedTriangles = 0;
 			bool bgr = (pluginOptions[PLUGINOPTION_BGR].value.on);
+			bool customColors = (pluginOptions[PLUGINOPTION_CUSTOM_COLORS].value.on);
 
 			// fix for 1.3.2 until a future release comes out with the lighting system refactor
 			PackedCol lightCol = (Lighting_) ? Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE) : Env_->SunCol;
@@ -951,11 +959,30 @@ void marioTick(struct ScheduledTask* task)
 				bool hasTexture = (obj->geometry.uv[i*6+0] != 1 && obj->geometry.uv[i*6+1] != 1 && obj->geometry.uv[i*6+2] != 1 && obj->geometry.uv[i*6+3] != 1 && obj->geometry.uv[i*6+4] != 1 && obj->geometry.uv[i*6+5] != 1);
 				bool wingCap = (obj->state.flags & MARIO_WING_CAP && i >= obj->geometry.numTrianglesUsed-8 && i <= obj->geometry.numTrianglesUsed-1); // do not draw white rectangles around wingcap
 
+				uint8_t r = obj->geometry.color[i*9+0]*255;
+				uint8_t g = obj->geometry.color[i*9+1]*255;
+				uint8_t b = obj->geometry.color[i*9+2]*255;
+				if (customColors)
+				{
+					for (int c = 0; c < 6; c++)
+					{
+						if (r == defaultColors[c].r && g == defaultColors[c].g && b == defaultColors[c].b)
+						{
+							r = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + c].value.col.r;
+							g = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + c].value.col.g;
+							b = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + c].value.col.b;
+							break;
+						}
+					}
+				}
+
+				PackedCol col = PackedCol_Tint(PackedCol_Make((bgr)?b:r, g, (bgr)?r:b, 255), lightCol);
+
 				obj->vertices[i*4+0] = (struct VertexTextured) {
 					(obj->geometry.position[i*9+0] - obj->state.position[0]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+1] - obj->state.position[1]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+2] - obj->state.position[2]) / MARIO_SCALE,
-					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?2:0)]*255, obj->geometry.color[i*9+1]*255, obj->geometry.color[i*9 + (bgr?0:2)]*255, 255), lightCol),
+					col,
 					(wingCap) ? 0 : 0.95, (wingCap) ? 0.95 : 0
 				};
 
@@ -963,7 +990,7 @@ void marioTick(struct ScheduledTask* task)
 					(obj->geometry.position[i*9+3] - obj->state.position[0]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+4] - obj->state.position[1]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+5] - obj->state.position[2]) / MARIO_SCALE,
-					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?5:3)]*255, obj->geometry.color[i*9+4]*255, obj->geometry.color[i*9 + (bgr?3:5)]*255, 255), lightCol),
+					col,
 					(wingCap) ? 0 : 0.96, (wingCap) ? 0.96 : 0
 				};
 
@@ -971,7 +998,7 @@ void marioTick(struct ScheduledTask* task)
 					(obj->geometry.position[i*9+6] - obj->state.position[0]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+7] - obj->state.position[1]) / MARIO_SCALE,
 					(obj->geometry.position[i*9+8] - obj->state.position[2]) / MARIO_SCALE,
-					PackedCol_Tint(PackedCol_Make(obj->geometry.color[i*9 + (bgr?8:6)]*255, obj->geometry.color[i*9+7]*255, obj->geometry.color[i*9 + (bgr?6:8)]*255, 255), lightCol),
+					col,
 					(wingCap) ? 0.01 : 0.96, (wingCap) ? 0.96 : 1
 				};
 
