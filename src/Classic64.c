@@ -725,16 +725,23 @@ bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget, bool* moreBelo
 			(Blocks_->ExtendedCollide[block] == COLLIDE_LAVA) ? SURFACE_BURNING :
 			SURFACE_DEFAULT;
 		obj.surfaces[ind].force = 0;
-		if (obj.surfaces[ind].type == SURFACE_ICE) obj.surfaces[ind].terrain = TERRAIN_SLIDE;
+		if (obj.surfaces[ind].type == SURFACE_ICE)
+		{
+			obj.surfaces[ind].type = SURFACE_VERY_SLIPPERY;
+			obj.surfaces[ind].terrain = TERRAIN_WATER;
+		}
 		else switch(Blocks_->StepSounds[block])
 		{
 			case SOUND_SNOW:
 				obj.surfaces[ind].terrain = TERRAIN_SNOW;
 				break;
-			case SOUND_GRASS:
-			case SOUND_GRAVEL:
 			case SOUND_CLOTH:
 			case SOUND_METAL:
+				obj.surfaces[ind].terrain = TERRAIN_GRASS;
+				break;
+			case SOUND_GRASS:
+			case SOUND_GRAVEL:
+				obj.surfaces[ind].type = SURFACE_NOISE_DEFAULT;
 				obj.surfaces[ind].terrain = TERRAIN_GRASS;
 				break;
 			case SOUND_SAND:
