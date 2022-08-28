@@ -76,7 +76,7 @@ static struct _GfxEventsList* GfxEvents_;
 
 bool isBlockSolid(BlockID block)
 {
-	return (block != 0 && Blocks_->Collide[block] == COLLIDE_SOLID);
+	return (block != 0 && (Blocks_->Collide[block] == COLLIDE_SOLID || Blocks_->ExtendedCollide[block] == COLLIDE_LAVA));
 }
 
 // mario variables
