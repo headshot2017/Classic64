@@ -3,9 +3,27 @@
 
 #include "ClassiCube/Graphics.h"
 
+#include <stdio.h>
+#include <string.h>
+
 void OnChatMessage(void* obj, const cc_string* msg, int msgType)
 {
-	
+	// if message starts with this, run as a mario64 client command
+	printf("'%s'\n", msg->buffer);
+	cc_string magicCmd = String_FromConst("&0!mario64");
+
+	if (msgType == 0 && String_CaselessStarts(msg, &magicCmd))
+	{
+		printf("mario64 cmd\n");
+		// i probably should not be using the unsafe functions?...
+		cc_string args[64];
+
+		int argsCount = String_UNSAFE_Split(msg, ' ', args, 64);
+		for (int i=0; i<argsCount-1; i++)
+			args[i] = args[i+1];
+
+		OnMarioClientCmd(args, argsCount-1);
+	}
 }
 
 void OnContextLost(void* obj)
