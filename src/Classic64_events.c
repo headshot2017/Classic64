@@ -9,7 +9,6 @@
 void OnChatMessage(void* obj, const cc_string* msg, int msgType)
 {
 	// if message starts with this, run as a mario64 client command
-	printf("'%s'\n", msg->buffer);
 	cc_string magicCmd = String_FromConst("&0!mario64");
 
 	if (msgType == 0 && String_CaselessStarts(msg, &magicCmd))
