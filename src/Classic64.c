@@ -8,10 +8,6 @@
 	#define EXPORT __attribute__((visibility("default")))
 #endif
 
-#define MARIO_SCALE 128.f
-#define IMARIO_SCALE 128
-#define DEBUGGER_MAX_VERTICES 4096
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +18,9 @@
 #include "decomp/include/seq_ids.h"
 #include "sha1/sha1.h"
 
+#include "Classic64_events.h"
 #include "Classic64_settings.h"
+#include "Classic64.h"
 
 #include "ClassiCube/Bitmap.h"
 #include "ClassiCube/Block.h"
@@ -82,29 +80,7 @@ bool isBlockSolid(BlockID block)
 
 // mario variables
 uint8_t *marioTextureUint8;
-
-struct MarioInstance // represents a Mario object in the plugin
-{
-	int32_t ID;
-	uint32_t surfaces[9*3];
-	Vec3 lastPos;
-	Vec3 currPos;
-
-	struct SM64MarioInputs input;
-	struct SM64MarioState state;
-	struct SM64MarioGeometryBuffers geometry;
-
-	struct VertexTextured vertices[4 * SM64_GEO_MAX_TRIANGLES];
-	struct VertexTextured texturedVertices[4 * SM64_GEO_MAX_TRIANGLES];
-	GfxResourceID vertexID;
-	GfxResourceID texturedVertexID;
-	uint16_t numTexturedTriangles;
-#ifdef CLASSIC64_DEBUG
-	struct VertexTextured debuggerVertices[DEBUGGER_MAX_VERTICES];
-	uint16_t numDebuggerTriangles;
-	GfxResourceID debuggerVertexID;
-#endif
-} *marioInstances[256];
+struct MarioInstance *marioInstances[256];
 
 int ticksBeforeSpawn;
 bool inited;
@@ -112,7 +88,6 @@ bool allowTick; // false when loading world
 float marioInterpTicks;
 
 // mario's model (the hard part)
-static struct Bitmap marioBitmap = {0, 1024, SM64_TEXTURE_HEIGHT};
 GfxResourceID marioTextureID;
 
 static void marioModel_Draw(struct Entity* p)
@@ -953,46 +928,6 @@ void selfMarioTick(struct ScheduledTask* task)
 	Entities_->List[ENTITIES_SELF_ID]->Position.Y = marioState.position[1];
 	Entities_->List[ENTITIES_SELF_ID]->Position.Z = marioState.position[2];
 	*/
-}
-
-// event callbacks
-void OnChatMessage(void* obj, const cc_string* msg, int msgType)
-{
-	
-}
-
-void OnContextLost(void* obj)
-{
-	Gfx_DeleteTexture(&marioTextureID);
-	for (int i=0; i<256; i++)
-	{
-		if (marioInstances[i])
-		{
-			struct MarioInstance* obj = marioInstances[i];
-			Gfx_DeleteDynamicVb(&obj->vertexID);
-			Gfx_DeleteDynamicVb(&obj->texturedVertexID);
-#ifdef CLASSIC64_DEBUG
-			Gfx_DeleteDynamicVb(&obj->debuggerVertexID);
-#endif
-		}
-	}
-}
-
-void OnContextRecreated(void* obj)
-{
-	marioTextureID = Gfx_CreateTexture(&marioBitmap, 0, false);
-	for (int i=0; i<256; i++)
-	{
-		if (marioInstances[i])
-		{
-			struct MarioInstance* obj = marioInstances[i];
-			obj->vertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
-			obj->texturedVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
-#ifdef CLASSIC64_DEBUG
-			obj->debuggerVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, DEBUGGER_MAX_VERTICES);
-#endif
-		}
-	}
 }
 
 // main plugin functions

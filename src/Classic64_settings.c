@@ -7,6 +7,43 @@
 #include "Classic64_settings.h"
 #include "ClassiCube/Core.h"
 
+// from Input.h
+const char* keyNames[] = {"none",
+
+	"f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10",
+	"f11", "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20",
+	"f21", "f22", "f23", "f24",
+
+	"tilde", "minus", "equals", "lbracket", "rbracket", "slash",
+	"semicolon", "quote", "comma", "period", "backslash",
+
+	"lshift", "rshift", "lctrl", "rctrl",
+	"lalt", "ralt", "lwin", "rwin",
+
+	"up", "down", "left", "right",
+
+	"0", "1", "2", "3", "4",
+	"5", "6", "7", "8", "9", /* same as '0'-'9' */
+
+	"insert", "delete", "home", "end", "pageup", "pagedown",
+	"menu",
+
+	"a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+	"k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+	"u", "v", "w", "x", "y", "z", /* same as 'A'-'Z' */
+
+	"enter", "escape", "space", "backspace", "tab", "capslock",
+	"scrolllock", "printscreen", "pause", "numlock",
+
+	"kp0", "kp1", "kp2", "kp3", "kp4",
+	"kp5", "kp6", "kp7", "kp8", "kp9",
+	"kp_divide", "kp_multiply", "kp_minus",
+	"kp_plus", "kp_decimal", "kp_enter",
+
+	/* NOTE: RMOUSE must be before MMOUSE for PlayerClick compatibility */
+	"xbutton1", "xbutton2", "lmouse", "rmouse", "mmouse",
+};
+
 const cc_string usageStrings[] = {
 	String_FromConst("<number>"),
 	String_FromConst("<on/off>"),
