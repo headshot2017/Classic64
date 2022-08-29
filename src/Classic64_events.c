@@ -13,7 +13,6 @@ void OnChatMessage(void* obj, const cc_string* msg, int msgType)
 
 	if (msgType == 0 && String_CaselessStarts(msg, &magicCmd))
 	{
-		printf("mario64 cmd\n");
 		// i probably should not be using the unsafe functions?...
 		cc_string args[64];
 
