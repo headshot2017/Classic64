@@ -1059,15 +1059,6 @@ static void Classic64_Init()
 			cc_uint8 r = marioTextureUint8[i*4+0];
 			cc_uint8 g = marioTextureUint8[i*4+1];
 			cc_uint8 b = marioTextureUint8[i*4+2];
-			/*
-			if (x >= 128 && x <= 128+32 && a == 0) // hat "M" logo
-			{
-				a = 255;
-				r = 255;
-				g = 0;
-				b = 0;
-			}
-			*/
 			marioBitmap.scan0[i] = b + (g << 8) + (r << 16) + (a << 24);
 		}
 		else
