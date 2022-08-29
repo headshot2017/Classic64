@@ -20,6 +20,7 @@
 #include "decomp/include/sm64.h"
 #include "decomp/include/surface_terrains.h"
 #include "decomp/include/seq_ids.h"
+#include "sha1/sha1.h"
 
 #include "Classic64_settings.h"
 
@@ -991,12 +992,12 @@ static void Classic64_Init()
 	LoadSymbolsFromGame();
 	for (int i=0; i<256; i++) marioInstances[i] = 0;
 	loadSettings();
+	inited = false;
 
 	FILE *f = fopen("plugins/sm64.us.z64", "rb");
 
 	if (!f)
 	{
-		inited = false;
 		SendChat("&cSuper Mario 64 US ROM not found!", NULL, NULL, NULL, NULL);
 		SendChat("&cClassic64 will not function without it.", NULL, NULL, NULL, NULL);
 		SendChat("&cPlease supply a ROM with filename 'sm64.us.z64'", NULL, NULL, NULL, NULL);
@@ -1004,12 +1005,7 @@ static void Classic64_Init()
 		return;
 	}
 
-	inited = true;
-	allowTick = false;
-	ticksBeforeSpawn = 1;
-	marioInterpTicks = 0;
-
-	// load libsm64
+	// load ROM into memory
 	uint8_t *romBuffer;
 	size_t romFileLength;
 
@@ -1021,10 +1017,37 @@ static void Classic64_Init()
 	romBuffer[romFileLength] = 0;
 	fclose(f);
 
+	// perform SHA-1 check to make sure it's the correct ROM
+	char expectedHash[] = "9bef1128717f958171a4afac3ed78ee2bb4e86ce";
+	char hashResult[21];
+	char hashHexResult[41];
+	SHA1(hashResult, (char*)romBuffer, romFileLength);
+
+	for( int offset = 0; offset < 20; offset++)
+		sprintf( ( hashHexResult + (2*offset)), "%02x", hashResult[offset]&0xff);
+
+	if (strcmp(hashHexResult, expectedHash)) // mismatch
+	{
+		cc_string expected = String_FromConst(expectedHash);
+		cc_string result = String_FromConst(hashHexResult);
+		SendChat("&cSuper Mario 64 US ROM is not correct! (SHA-1 mismatch)", NULL, NULL, NULL, NULL);
+		SendChat("&cExpected: &e%s", &expected, NULL, NULL, NULL);
+		SendChat("&cYour copy: &e%s", &result, NULL, NULL, NULL);
+		SendChat("&cClassic64 will not function with this ROM.", NULL, NULL, NULL, NULL);
+		return;
+	}
+
+	// all good!
+	inited = true;
+	allowTick = false;
+	ticksBeforeSpawn = 1;
+	marioInterpTicks = 0;
+
 	// Mario texture is 704x64 RGBA (changed to 1024x64 in this classicube plugin)
 	marioTextureUint8 = (uint8_t*)malloc(4 * SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT);
 	marioBitmap.scan0 = (BitmapCol*)malloc(sizeof(BitmapCol) * SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT); // texture sizes must be power of two
 
+	// load libsm64
 	sm64_global_terminate();
 	sm64_global_init(romBuffer, marioTextureUint8, NULL);
 	for (int i=0; i<SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT; i++) // copy texture to classicube bitmap
