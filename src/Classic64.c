@@ -846,10 +846,19 @@ void selfMarioTick(struct ScheduledTask* task)
 	if (!marioInstances[ENTITIES_SELF_ID]) return;
 	struct MarioInstance *obj = marioInstances[ENTITIES_SELF_ID];
 
-	obj->state.position[0] = obj->lastPos.X + ((obj->currPos.X - obj->lastPos.X) * (marioInterpTicks / (1.f/30)));
-	obj->state.position[1] = obj->lastPos.Y + ((obj->currPos.Y - obj->lastPos.Y) * (marioInterpTicks / (1.f/30)));
-	obj->state.position[2] = obj->lastPos.Z + ((obj->currPos.Z - obj->lastPos.Z) * (marioInterpTicks / (1.f/30)));
-	if (marioInterpTicks < 1.f/30) marioInterpTicks += 1.f/300;
+	if (pluginOptions[PLUGINOPTION_INTERP].value.on)
+	{
+		obj->state.position[0] = obj->lastPos.X + ((obj->currPos.X - obj->lastPos.X) * (marioInterpTicks / (1.f/30)));
+		obj->state.position[1] = obj->lastPos.Y + ((obj->currPos.Y - obj->lastPos.Y) * (marioInterpTicks / (1.f/30)));
+		obj->state.position[2] = obj->lastPos.Z + ((obj->currPos.Z - obj->lastPos.Z) * (marioInterpTicks / (1.f/30)));
+		if (marioInterpTicks < 1.f/30) marioInterpTicks += 1.f/300;
+	}
+	else
+	{
+		obj->state.position[0] = obj->currPos.X;
+		obj->state.position[1] = obj->currPos.Y;
+		obj->state.position[2] = obj->currPos.Z;
+	}
 
 	struct LocationUpdate update = {0};
 	update.Flags = LOCATIONUPDATE_POS;

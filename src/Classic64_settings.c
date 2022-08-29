@@ -48,6 +48,11 @@ struct PluginOption pluginOptions[] = {
 		3, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
 	},
 	{
+		String_FromConst("interpolation"),
+		{String_FromConst("&eSmooth out Mario's position at 60 FPS.")},
+		1, PLUGINOPTION_VALUE_BOOL, {.on=true}, false
+	},
+	{
 		String_FromConst("custom_colors"),
 		{String_FromConst("&eWhether to use custom Mario colors.")},
 		1, PLUGINOPTION_VALUE_BOOL, {.on=true}, false
