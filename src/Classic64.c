@@ -89,6 +89,7 @@ float marioInterpTicks;
 
 // mario's model (the hard part)
 GfxResourceID marioTextureID;
+struct Bitmap marioBitmap = {0, 1024, SM64_TEXTURE_HEIGHT};
 
 static void marioModel_Draw(struct Entity* p)
 {
@@ -150,7 +151,7 @@ static struct Model* marioModel_GetInstance(void) {
 }
 
 // chat command
-static void OnMarioClientCmd(const cc_string* args, int argsCount)
+void OnMarioClientCmd(const cc_string* args, int argsCount)
 {
 	cc_string empty = String_FromConst("");
 	cc_string on = String_FromConst("on");

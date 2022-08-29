@@ -14,7 +14,7 @@
 #include "ClassiCube/Vectors.h"
 
 extern GfxResourceID marioTextureID;
-static struct Bitmap marioBitmap = {0, 1024, SM64_TEXTURE_HEIGHT};
+extern struct Bitmap marioBitmap;
 
 struct MarioInstance // represents a Mario object in the plugin
 {
@@ -39,5 +39,7 @@ struct MarioInstance // represents a Mario object in the plugin
 #endif
 };
 extern struct MarioInstance *marioInstances[256];
+
+void OnMarioClientCmd(const cc_string* args, int argsCount);
 
 #endif
