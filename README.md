@@ -32,9 +32,14 @@ To turn into Mario, run the command `/model mario64`. This will let everyone on 
 
 If you are on a server with hacks enabled (flying, speed, etc) but the "/model" command is not allowed, you can run the client-side command `/client mario64 force`, at the cost that nobody will see your Mario model.
 
-## Known issues
-* If the game crashes when starting:
-  * Make sure the ROM matches the SHA-1 checksum: `9bef1128717f958171a4afac3ed78ee2bb4e86ce`
+## Running client-side commands with MessageBlocks or Bots
+If you're making a map intended for Mario, you can alter certain aspects of the plugin through your map by using MessageBlocks, or Bots! (Only on MCGalaxy servers)
+
+The format is `&0!mario64`, followed by one of the client-side commands listed below.
+
+Examples:<br/>
+If you want to play music ID 27 (Correct Solution) when breaking a white wool block: `/mb white &0!mario64 music 7`<br/>
+If you want to instantly kill Mario when a bot kills the player: `/bot deathmessage <bot-name> &0!mario64 kill`
 
 ## Client-side commands
 All client-side commands start with `/client mario64`
