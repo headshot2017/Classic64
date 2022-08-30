@@ -728,6 +728,14 @@ void marioTick(struct ScheduledTask* task)
 			{
 				marioInterpTicks = 0;
 				obj->lastPos.X = obj->state.position[0]; obj->lastPos.Y = obj->state.position[1]; obj->lastPos.Z = obj->state.position[2];
+				if (pluginOptions[PLUGINOPTION_INTERP].value.on)
+				{
+					for (int j=0; j<3 * SM64_GEO_MAX_TRIANGLES; j++)
+					{
+						obj->lastGeom[j] = obj->currGeom[j];
+						obj->lastTexturedGeom[j] = obj->currTexturedGeom[j];
+					}
+				}
 			}
 
 			if (!pluginOptions[PLUGINOPTION_HURT].value.on && sm64_mario_get_health(obj->ID) != 0xff) sm64_mario_set_health(obj->ID, 0x880);
@@ -813,8 +821,18 @@ void marioTick(struct ScheduledTask* task)
 							PackedCol_Tint(PACKEDCOL_WHITE, lightCol),
 							obj->geometry.uv[j*6+(k*2+0)], obj->geometry.uv[j*6+(k*2+1)]
 						};
+
+						if (k<3 && i == ENTITIES_SELF_ID) // interpolation
+							obj->currTexturedGeom[obj->numTexturedTriangles*3+k] = (Vec3){obj->texturedVertices[obj->numTexturedTriangles*4+k].X, obj->texturedVertices[obj->numTexturedTriangles*4+k].Y, obj->texturedVertices[obj->numTexturedTriangles*4+k].Z};
 					}
+
 					obj->numTexturedTriangles++;
+				}
+
+				if (i == ENTITIES_SELF_ID) // interpolation
+				{
+					for (int k=0; k<3; k++)
+						obj->currGeom[j*3+k] = (Vec3){obj->vertices[j*4+k].X, obj->vertices[j*4+k].Y, obj->vertices[j*4+k].Z};
 				}
 			}
 			Gfx_SetDynamicVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
@@ -837,9 +855,35 @@ void selfMarioTick(struct ScheduledTask* task)
 
 	if (pluginOptions[PLUGINOPTION_INTERP].value.on)
 	{
+		// interpolate position and mesh
 		obj->state.position[0] = obj->lastPos.X + ((obj->currPos.X - obj->lastPos.X) * (marioInterpTicks / (1.f/30)));
 		obj->state.position[1] = obj->lastPos.Y + ((obj->currPos.Y - obj->lastPos.Y) * (marioInterpTicks / (1.f/30)));
 		obj->state.position[2] = obj->lastPos.Z + ((obj->currPos.Z - obj->lastPos.Z) * (marioInterpTicks / (1.f/30)));
+
+		for (int i=0; i<obj->geometry.numTrianglesUsed; i++)
+		{
+			for (int j=0; j<3; j++)
+			{
+				obj->vertices[i*4+j].X = obj->lastGeom[i*3+j].X + ((obj->currGeom[i*3+j].X - obj->lastGeom[i*3+j].X) * (marioInterpTicks / (1.f/30)));
+				obj->vertices[i*4+j].Y = obj->lastGeom[i*3+j].Y + ((obj->currGeom[i*3+j].Y - obj->lastGeom[i*3+j].Y) * (marioInterpTicks / (1.f/30)));
+				obj->vertices[i*4+j].Z = obj->lastGeom[i*3+j].Z + ((obj->currGeom[i*3+j].Z - obj->lastGeom[i*3+j].Z) * (marioInterpTicks / (1.f/30)));
+
+				obj->texturedVertices[i*4+j].X = obj->lastTexturedGeom[i*3+j].X + ((obj->currTexturedGeom[i*3+j].X - obj->lastTexturedGeom[i*3+j].X) * (marioInterpTicks / (1.f/30)));
+				obj->texturedVertices[i*4+j].Y = obj->lastTexturedGeom[i*3+j].Y + ((obj->currTexturedGeom[i*3+j].Y - obj->lastTexturedGeom[i*3+j].Y) * (marioInterpTicks / (1.f/30)));
+				obj->texturedVertices[i*4+j].Z = obj->lastTexturedGeom[i*3+j].Z + ((obj->currTexturedGeom[i*3+j].Z - obj->lastTexturedGeom[i*3+j].Z) * (marioInterpTicks / (1.f/30)));
+			}
+
+			obj->vertices[i*4+3].X = obj->vertices[i*4+2].X;
+			obj->vertices[i*4+3].Y = obj->vertices[i*4+2].Y;
+			obj->vertices[i*4+3].Z = obj->vertices[i*4+2].Z;
+
+			obj->texturedVertices[i*4+3].X = obj->texturedVertices[i*4+2].X;
+			obj->texturedVertices[i*4+3].Y = obj->texturedVertices[i*4+2].Y;
+			obj->texturedVertices[i*4+3].Z = obj->texturedVertices[i*4+2].Z;
+		}
+		Gfx_SetDynamicVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
+		Gfx_SetDynamicVbData(obj->texturedVertexID, &obj->texturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
+
 		if (marioInterpTicks < 1.f/30) marioInterpTicks += 1.f/300;
 	}
 	else
@@ -857,12 +901,8 @@ void selfMarioTick(struct ScheduledTask* task)
 	update.RelativePos = false;
 	if (pluginOptions[PLUGINOPTION_CAMERA].value.on)
 	{
-		static float currYaw = 0;
-		float diffYaw = ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG) - Entities_->List[ENTITIES_SELF_ID]->Yaw;
-
-		currYaw = Math_LerpAngle(Entities_->List[ENTITIES_SELF_ID]->Yaw, ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG), 0.03f);
 		update.Flags |= LOCATIONUPDATE_YAW;
-		update.Yaw = currYaw;
+		update.Yaw = Math_LerpAngle(Entities_->List[ENTITIES_SELF_ID]->Yaw, ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG), 0.03f);
 	}
 	Entities_->List[ENTITIES_SELF_ID]->VTABLE->SetLocation(Entities_->List[ENTITIES_SELF_ID], &update, false);
 	Entities_->List[ENTITIES_SELF_ID]->Velocity.X = Entities_->List[ENTITIES_SELF_ID]->Velocity.Y = Entities_->List[ENTITIES_SELF_ID]->Velocity.Z = 0;

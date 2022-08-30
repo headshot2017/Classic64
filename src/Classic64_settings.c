@@ -86,7 +86,7 @@ struct PluginOption pluginOptions[] = {
 	},
 	{
 		String_FromConst("interpolation"),
-		{String_FromConst("&eSmooth out Mario's position at 60 FPS.")},
+		{String_FromConst("&eSmooth out Mario's position and animations at 60 FPS.")},
 		1, PLUGINOPTION_VALUE_BOOL, {.on=true}, false
 	},
 	{
