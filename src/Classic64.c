@@ -58,6 +58,18 @@ BlockID World_SafeGetBlock(int x, int y, int z) {
 		BLOCK_AIR;
 }
 
+float Math_LerpAngle(float leftAngle, float rightAngle, float t) {
+	/* We have to cheat a bit for angles here */
+	/* Consider 350* --> 0*, we only want to travel 10* */
+	/* But without adjusting for this case, we would interpolate back the whole 350* degrees */
+	cc_bool invertLeft  = leftAngle  > 270.0f && rightAngle < 90.0f;
+	cc_bool invertRight = rightAngle > 270.0f && leftAngle  < 90.0f;
+	if (invertLeft)  leftAngle  = leftAngle  - 360.0f;
+	if (invertRight) rightAngle = rightAngle - 360.0f;
+
+	return leftAngle + (rightAngle - leftAngle) * t;
+}
+
 // classicube symbols
 static void LoadSymbolsFromGame(void);
 static struct _ServerConnectionData* Server_;
@@ -115,6 +127,7 @@ static void marioModel_Draw(struct Entity* p)
 				Gfx_DrawVb_IndexedTris(obj->numDebuggerTriangles);
 			}
 #endif
+			break;
 		}
 	}
 }
@@ -845,17 +858,11 @@ void selfMarioTick(struct ScheduledTask* task)
 	if (pluginOptions[PLUGINOPTION_CAMERA].value.on)
 	{
 		static float currYaw = 0;
-		currYaw = Entities_->List[ENTITIES_SELF_ID]->Yaw;
 		float diffYaw = ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG) - Entities_->List[ENTITIES_SELF_ID]->Yaw;
-		if (abs(diffYaw) >= 180)
-		{
-			currYaw = diffYaw;
-			diffYaw = ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG) - currYaw;
-		}
-		currYaw += diffYaw*0.05f;
+
+		currYaw = Math_LerpAngle(Entities_->List[ENTITIES_SELF_ID]->Yaw, ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG), 0.03f);
 		update.Flags |= LOCATIONUPDATE_YAW;
-		update.Yaw = ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG); // use currYaw for smooth camera (must fix)
-		//printf("%.2f %.2f %.2f\n", update.Yaw, Entities_->List[ENTITIES_SELF_ID]->Yaw, diffYaw);
+		update.Yaw = currYaw;
 	}
 	Entities_->List[ENTITIES_SELF_ID]->VTABLE->SetLocation(Entities_->List[ENTITIES_SELF_ID], &update, false);
 	Entities_->List[ENTITIES_SELF_ID]->Velocity.X = Entities_->List[ENTITIES_SELF_ID]->Velocity.Y = Entities_->List[ENTITIES_SELF_ID]->Velocity.Z = 0;
