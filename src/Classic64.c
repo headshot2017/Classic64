@@ -461,7 +461,7 @@ static struct ChatCommand MarioClientCmd = {
 // mario functions
 void deleteBlocks(uint32_t *arrayTarget) // specify arrayTarget because the blocks need to be created before mario can be spawned
 {
-	for (int j=0; j<9*3; j++)
+	for (int j=0; j<128; j++)
 	{
 		if (arrayTarget[j] == -1) continue;
 		sm64_surface_object_delete(arrayTarget[j]);
@@ -736,7 +736,7 @@ void marioTick(struct ScheduledTask* task)
 		if (!marioInstances[i] && ticksBeforeSpawn <= 0 && strcmp(Entities_->List[i]->Model->name, "mario64") == 0)
 		{
 			// spawn mario. have some temporary variables for the surface IDs and mario ID
-			uint32_t surfaces[9*3];
+			uint32_t surfaces[128];
 			memset(surfaces, -1, sizeof(surfaces));
 			loadNewBlocks(i, Entities_->List[i]->Position.X, Entities_->List[i]->Position.Y, Entities_->List[i]->Position.Z, surfaces);
 			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, 0,0,0,0);

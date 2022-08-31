@@ -19,7 +19,7 @@ extern struct Bitmap marioBitmap;
 struct MarioInstance // represents a Mario object in the plugin
 {
 	int32_t ID;
-	uint32_t surfaces[9*3];
+	uint32_t surfaces[128];
 	Vec3 lastPos;
 	Vec3 currPos;
 	Vec3 lastGeom[3 * SM64_GEO_MAX_TRIANGLES], lastTexturedGeom[3 * SM64_GEO_MAX_TRIANGLES];
