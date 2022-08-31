@@ -17,6 +17,7 @@
 #include <seq_ids.h>
 #include <mario_animation_ids.h>
 #include <mario_geo_switch_case_ids.h>
+#include <object_fields.h>
 #include "decomp/shim.h"
 #include "decomp/memory.h"
 #include "decomp/global_state.h"
@@ -237,6 +238,11 @@ SM64_LIB_FN int32_t sm64_mario_create( float x, float y, float z, int16_t rx, in
 			sm64_mario_delete( marioIndex );
 			return -1;
 		}
+
+		gMarioState->poleHeight = 0;
+		gMarioState->polePos[0] = 0;
+		gMarioState->polePos[1] = 0;
+		gMarioState->polePos[2] = 0;
 
 		set_mario_action( gMarioState, ACT_SPAWN_SPIN_AIRBORNE, 0);
 		find_floor( x, y, z, &gMarioState->floor );
@@ -520,6 +526,18 @@ SM64_LIB_FN void sm64_mario_interact_cap(int32_t marioId, uint32_t capFlag, uint
 			play_cap_music(capMusic);
 		}
 	}
+}
+
+SM64_LIB_FN void sm64_set_mario_pole(int32_t marioId, float x, float y, float z, float height)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+	global_state_bind( globalState );
+
+	gMarioState->poleHeight = height;
+	gMarioState->polePos[0] = x;
+	gMarioState->polePos[1] = y;
+	gMarioState->polePos[2] = z;
+	gMarioState->marioObj->oMarioPolePos = gMarioState->pos[1] - gMarioState->polePos[1];
 }
 
 SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject )

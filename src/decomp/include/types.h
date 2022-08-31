@@ -366,6 +366,8 @@ struct MarioState
     u16 curTerrain; // libsm64: added field
 	u16 overrideTerrain; // libsm64-gmod: added field
 	s16 overrideFloorType; // libsm64-gmod: added field
+	f32 poleHeight; // Classic64
+	Vec3f polePos; // Classic64
 };
 
 #endif // TYPES_H

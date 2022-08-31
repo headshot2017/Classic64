@@ -121,6 +121,7 @@ extern SM64_LIB_FN void sm64_mario_set_health(int32_t marioId, uint16_t health);
 extern SM64_LIB_FN uint16_t sm64_mario_get_health(int32_t marioId);
 extern SM64_LIB_FN void sm64_mario_kill(int32_t marioId);
 extern SM64_LIB_FN void sm64_mario_interact_cap(int32_t marioId, uint32_t capFlag, uint16_t capTime, uint8_t playMusic);
+extern SM64_LIB_FN void sm64_set_mario_pole(int32_t marioId, float x, float y, float z, float height);
 
 extern SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject );
 extern SM64_LIB_FN void sm64_surface_object_move( uint32_t objectId, const struct SM64ObjectTransform *transform );

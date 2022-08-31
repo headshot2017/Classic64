@@ -669,6 +669,43 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 				bool moreBelow = false;
 				if (addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget, &moreBelow) && !moreBelow) break;
 			}
+
+			// rope interaction
+			if (xadd == 0 && zadd == 0)
+			{
+				BlockID rope = World_SafeGetBlock(x, y, z);
+				if (Blocks_->Collide[rope] == COLLIDE_CLIMB_ROPE)
+				{
+					int height = 0, bottom = 0;
+					while (Blocks_->Collide[World_SafeGetBlock(x, y-bottom-1, z)] == COLLIDE_CLIMB_ROPE)
+						bottom++;
+					while (Blocks_->Collide[World_SafeGetBlock(x, y-bottom+height+1, z)] == COLLIDE_CLIMB_ROPE)
+						height++;
+
+					if (marioInstances[i])
+					{
+						struct MarioInstance* obj = marioInstances[i];
+						if (!(obj->state.action & ACT_FLAG_ON_POLE))
+						{
+							sm64_set_mario_pole(obj->ID, (x*MARIO_SCALE+(MARIO_SCALE/2)), (y-bottom)*MARIO_SCALE, (z*MARIO_SCALE+(MARIO_SCALE/2)), height*MARIO_SCALE);
+
+							float xdist = fabs((x*MARIO_SCALE+(MARIO_SCALE/2)) - obj->currPos.X);
+							float zdist = fabs((z*MARIO_SCALE+(MARIO_SCALE/2)) - obj->currPos.Z);
+							if ((obj->state.action & ACT_FLAG_AIR) && (obj->lastPoleHeight != height || obj->lastPole.X != x || obj->lastPole.Y != y-bottom || obj->lastPole.Z != z) && xdist < 40 && zdist < 40)
+							{
+								obj->lastPole = (Vec3){x, y-bottom, z};
+								obj->lastPoleHeight = height;
+								sm64_set_mario_action(obj->ID, ACT_GRAB_POLE_SLOW);
+							}
+						}
+					}
+				}
+				else if (marioInstances[i])
+				{
+					marioInstances[i]->lastPole = (Vec3){0};
+					marioInstances[i]->lastPoleHeight = 0;
+				}
+			}
 		}
 	}
 
@@ -762,6 +799,8 @@ void marioTick(struct ScheduledTask* task)
 				marioInstances[i]->vertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
 				marioInstances[i]->texturedVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
 				marioInstances[i]->numTexturedTriangles = 0;
+				marioInstances[i]->lastPole = (Vec3){0};
+				marioInstances[i]->lastPoleHeight = 0;
 #ifdef CLASSIC64_DEBUG
 				marioInstances[i]->debuggerVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, DEBUGGER_MAX_VERTICES);
 #endif
@@ -1039,6 +1078,15 @@ void selfMarioTick(struct ScheduledTask* task)
 		obj->input.camLookX = (update.Pos.X - Camera_->CurrentPos.X) + (Math_Sin((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
 		obj->input.camLookZ = (update.Pos.Z - Camera_->CurrentPos.Z) + (Math_Cos((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
 	}
+
+	if (obj->state.action & ACT_FLAG_ON_POLE)
+	{
+		obj->input.camLookX *= -1;
+		obj->input.camLookZ *= -1;
+		obj->input.stickX *= -1;
+		obj->input.stickY *= -1;
+	}
+
 	obj->input.buttonA = KeyBind_IsPressed(KEYBIND_JUMP);
 	obj->input.buttonB = KeyBind_IsPressed(KEYBIND_DELETE_BLOCK);
 	// Z button is managed in Classic64_events.c

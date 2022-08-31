@@ -59,6 +59,15 @@ void play_climbing_sounds(struct MarioState *m, s32 b) {
 //      play_sound(isOnTree ? SOUND_MOVING_SLIDE_DOWN_TREE : SOUND_MOVING_SLIDE_DOWN_POLE,
 //                 m->marioObj->header.gfx.cameraToObject);
 //  }
+
+    if (b == 1)
+    {
+        if (is_anim_past_frame(m, 1)) {
+            play_sound(SOUND_ACTION_CLIMB_UP_POLE, m->marioObj->header.gfx.cameraToObject);
+        }
+    } else {
+        play_sound(SOUND_MOVING_SLIDE_DOWN_POLE, m->marioObj->header.gfx.cameraToObject);
+    }
 }
 
 s32 set_pole_position(struct MarioState *m, f32 offsetY) {
@@ -71,16 +80,16 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
     f32 ceilHeight;
     s32 collided;
     s32 result = POLE_NONE;
-    f32 poleTop = m->usedObj->hitboxHeight - 100.0f;
+    f32 poleTop = m->poleHeight;
     struct Object *marioObj = m->marioObj;
 
     if (marioObj->oMarioPolePos > poleTop) {
         marioObj->oMarioPolePos = poleTop;
     }
 
-    m->pos[0] = m->usedObj->oPosX;
-    m->pos[2] = m->usedObj->oPosZ;
-    m->pos[1] = m->usedObj->oPosY + marioObj->oMarioPolePos + offsetY;
+    m->pos[0] = m->polePos[0];
+    m->pos[2] = m->polePos[2];
+    m->pos[1] = m->polePos[1] + marioObj->oMarioPolePos + offsetY;
 
     collided = f32_find_wall_collision(&m->pos[0], &m->pos[1], &m->pos[2], 60.0f, 50.0f);
     collided |= f32_find_wall_collision(&m->pos[0], &m->pos[1], &m->pos[2], 30.0f, 24.0f);
@@ -88,7 +97,7 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
     ceilHeight = vec3f_find_ceil(m->pos, m->pos[1], &ceil);
     if (m->pos[1] > ceilHeight - 160.0f) {
         m->pos[1] = ceilHeight - 160.0f;
-        marioObj->oMarioPolePos = m->pos[1] - m->usedObj->oPosY;
+        marioObj->oMarioPolePos = m->pos[1] - m->polePos[1];
     }
 
     floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &floor);
@@ -96,8 +105,8 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
         m->pos[1] = floorHeight;
         set_mario_action(m, ACT_IDLE, 0);
         result = POLE_TOUCHED_FLOOR;
-    } else if (marioObj->oMarioPolePos < -m->usedObj->hitboxDownOffset) {
-        m->pos[1] = m->usedObj->oPosY - m->usedObj->hitboxDownOffset;
+    } else if (marioObj->oMarioPolePos < 0) {
+        m->pos[1] = m->polePos[1] - 0;
         set_mario_action(m, ACT_FREEFALL, 0);
         result = POLE_FELL_OFF;
     } else if (collided) {
@@ -112,8 +121,9 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
     }
 
     vec3f_copy(m->marioObj->header.gfx.pos, m->pos);
-    vec3s_set(m->marioObj->header.gfx.angle, m->usedObj->oMoveAnglePitch, m->faceAngle[1],
-              m->usedObj->oMoveAngleRoll);
+    /*vec3s_set(m->marioObj->header.gfx.angle, m->usedObj->oMoveAnglePitch, m->faceAngle[1],
+              m->usedObj->oMoveAngleRoll);*/
+    vec3s_set(m->marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
 
     return result;
 }
@@ -148,7 +158,7 @@ s32 act_holding_pole(struct MarioState *m) {
 #endif
 
     if (m->controller->stickY > 16.0f) {
-        f32 poleTop = m->usedObj->hitboxHeight - 100.0f;
+        f32 poleTop = m->poleHeight;
 //      const BehaviorScript *poleBehavior = virtual_to_segmented(0x13, m->usedObj->behavior);
 
         if (marioObj->oMarioPolePos < poleTop - 0.4f) {

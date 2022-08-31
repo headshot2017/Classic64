@@ -25,6 +25,9 @@ struct MarioInstance // represents a Mario object in the plugin
 	Vec3 lastGeom[3 * SM64_GEO_MAX_TRIANGLES], lastTexturedGeom[3 * SM64_GEO_MAX_TRIANGLES];
 	Vec3 currGeom[3 * SM64_GEO_MAX_TRIANGLES], currTexturedGeom[3 * SM64_GEO_MAX_TRIANGLES];
 
+	Vec3 lastPole;
+	int lastPoleHeight;
+
 	struct SM64MarioInputs input;
 	struct SM64MarioState state;
 	struct SM64MarioGeometryBuffers geometry;
