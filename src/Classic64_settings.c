@@ -46,6 +46,7 @@ const char* keyNames[] = {"none",
 
 const cc_string usageStrings[] = {
 	String_FromConst("<number>"),
+	String_FromConst("<string>"),
 	String_FromConst("<on/off>"),
 	String_FromConst("<red 0/255> <green 0/255> <blue 0/255>"),
 };
@@ -88,6 +89,11 @@ struct PluginOption pluginOptions[] = {
 		String_FromConst("interpolation"),
 		{String_FromConst("&eSmooth out Mario's position and animations at 60 FPS.")},
 		1, PLUGINOPTION_VALUE_BOOL, {.on=true}, false
+	},
+	{
+		String_FromConst("key_crouch"),
+		{String_FromConst("&eChange Mario's crouch key (Z button).")},
+		1, PLUGINOPTION_VALUE_STRING, {.str={"lshift", keyNames, 122}}, false
 	},
 	{
 		String_FromConst("custom_colors"),
@@ -148,7 +154,10 @@ void saveSettings()
 				fprintf(f, "%s\n", (pluginOptions[i].value.on) ? "on" : "off");
 				break;
 			case PLUGINOPTION_VALUE_NUMBER:
-				fprintf(f, "%d\n", pluginOptions[i].value.num);
+				fprintf(f, "%d\n", pluginOptions[i].value.num.current);
+				break;
+			case PLUGINOPTION_VALUE_STRING:
+				fprintf(f, "%s\n", pluginOptions[i].value.str.current);
 				break;
 			case PLUGINOPTION_VALUE_RGB:
 				fprintf(f, "%d,%d,%d\n", pluginOptions[i].value.col.r, pluginOptions[i].value.col.g, pluginOptions[i].value.col.b);
@@ -179,7 +188,10 @@ void loadSettings()
 						pluginOptions[i].value.on = (strcmp(value, "on") == 0);
 						break;
 					case PLUGINOPTION_VALUE_NUMBER:
-						pluginOptions[i].value.num = atoi(value);
+						pluginOptions[i].value.num.current = atoi(value);
+						break;
+					case PLUGINOPTION_VALUE_STRING:
+						strcpy(pluginOptions[i].value.str.current, value);
 						break;
 					case PLUGINOPTION_VALUE_RGB:
 						{

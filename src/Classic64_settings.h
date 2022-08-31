@@ -10,6 +10,7 @@ enum
 	PLUGINOPTION_CAMERA,
 	PLUGINOPTION_BGR,
 	PLUGINOPTION_INTERP,
+	PLUGINOPTION_KEY_CROUCH,
 	PLUGINOPTION_CUSTOM_COLORS,
 	PLUGINOPTION_COLOR_OVERALLS,
 	PLUGINOPTION_COLOR_SHIRT_HAT,
@@ -23,6 +24,7 @@ enum
 	PLUGINOPTIONS_MAX,
 
 	PLUGINOPTION_VALUE_NUMBER=0,
+	PLUGINOPTION_VALUE_STRING,
 	PLUGINOPTION_VALUE_BOOL,
 	PLUGINOPTION_VALUE_RGB
 };
@@ -32,6 +34,7 @@ struct RGBCol
 	uint8_t r, g, b;
 };
 
+extern const char* keyNames[];
 extern const cc_string usageStrings[];
 extern const struct RGBCol defaultColors[];
 
@@ -42,7 +45,14 @@ struct PluginOption {
 	int valueType;
 	union ValueUnion
 	{
-		int num;
+		struct numValue {
+			int current, min, max;
+		} num;
+		struct strValue {
+			char current[64];
+			const char **validList;
+			int validMax;
+		} str;
 		bool on;
 		struct RGBCol col;
 	} value;

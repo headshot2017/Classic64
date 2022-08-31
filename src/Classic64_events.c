@@ -1,6 +1,9 @@
-#include "Classic64.h"
 #include "Classic64_events.h"
 
+#include "Classic64.h"
+#include "Classic64_settings.h"
+
+#include "ClassiCube/Entity.h"
 #include "ClassiCube/Graphics.h"
 
 #include <stdio.h>
@@ -21,6 +24,26 @@ void OnChatMessage(void* obj, const cc_string* msg, int msgType)
 			args[i] = args[i+1];
 
 		OnMarioClientCmd(args, argsCount-1);
+	}
+}
+
+void OnKeyDown(void* obj, int key, cc_bool repeating)
+{
+	if (repeating || isGuiOpen()) return;
+
+	if (marioInstances[ENTITIES_SELF_ID] && strcmp(pluginOptions[PLUGINOPTION_KEY_CROUCH].value.str.current, keyNames[key]) == 0)
+	{
+		marioInstances[ENTITIES_SELF_ID]->input.buttonZ = true;
+	}
+}
+
+void OnKeyUp(void* obj, int key)
+{
+	if (isGuiOpen()) return;
+
+	if (marioInstances[ENTITIES_SELF_ID] && strcmp(pluginOptions[PLUGINOPTION_KEY_CROUCH].value.str.current, keyNames[key]) == 0)
+	{
+		marioInstances[ENTITIES_SELF_ID]->input.buttonZ = false;
 	}
 }
 

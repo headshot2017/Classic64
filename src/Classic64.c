@@ -26,6 +26,7 @@
 #include "ClassiCube/Block.h"
 #include "ClassiCube/Camera.h"
 #include "ClassiCube/Chat.h"
+#include "ClassiCube/Drawer2D.h"
 #include "ClassiCube/Entity.h"
 #include "ClassiCube/Event.h"
 #include "ClassiCube/ExtMath.h"
@@ -84,6 +85,9 @@ static struct _GuiData* Gui_;
 static struct _Lighting* Lighting_;
 static struct _ChatEventsList* ChatEvents_;
 static struct _GfxEventsList* GfxEvents_;
+static struct _InputEventsList* InputEvents_;
+
+bool isGuiOpen() {return Gui_->InputGrab;}
 
 bool isBlockSolid(BlockID block)
 {
@@ -310,7 +314,10 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 							String_AppendConst(&value, (pluginOptions[i].value.on) ? "on" : "off");
 							break;
 						case PLUGINOPTION_VALUE_NUMBER:
-							String_AppendInt(&value, pluginOptions[i].value.num);
+							String_AppendInt(&value, pluginOptions[i].value.num.current);
+							break;
+						case PLUGINOPTION_VALUE_STRING:
+							String_AppendConst(&value, pluginOptions[i].value.str.current);
 							break;
 						case PLUGINOPTION_VALUE_RGB:
 							{
@@ -340,13 +347,77 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 						break;
 
 					case PLUGINOPTION_VALUE_NUMBER:
-						if (!Convert_ParseInt(&args[2], &pluginOptions[i].value.num))
 						{
-							SendChat("&cUnknown value \"%s\". Please enter a number.", &args[2], NULL, NULL, NULL);
-							return;
-						}
+							int val;
+							if (!Convert_ParseInt(&args[2], &val))
+							{
+								SendChat("&cUnknown value \"%s\". Please enter a number.", &args[2], NULL, NULL, NULL);
+								return;
+							}
+							if (val < pluginOptions[i].value.num.min || val > pluginOptions[i].value.num.max)
+							{
+								cc_string Min; char MinBuf[32];
+								cc_string Max; char MaxBuf[32];
+								String_InitArray(Min, MinBuf);
+								String_InitArray(Max, MaxBuf);
+								String_AppendInt(&Min, pluginOptions[i].value.num.min);
+								String_AppendInt(&Max, pluginOptions[i].value.num.max);
 
-						SendChat("&a%s: %s", &pluginOptions[i].name, &args[2], NULL, NULL);
+								SendChat("&cNumber \"%s\" out of range. Please enter a number between %s and %s.", &args[2], &Min, &Max, NULL);
+								return;
+							}
+
+							pluginOptions[i].value.num.current = val;
+							SendChat("&a%s: %s", &pluginOptions[i].name, &args[2], NULL, NULL);
+						}
+						break;
+
+					case PLUGINOPTION_VALUE_STRING:
+						{
+							if (pluginOptions[i].value.str.validList)
+							{
+								// user must pick a value from a list
+
+								bool found = false;
+								for (int j=0; j<pluginOptions[i].value.str.validMax && !found; j++)
+								{
+									if (strcmp(args[2].buffer, pluginOptions[i].value.str.validList[j]) == 0)
+										found = true;
+								}
+
+								if (!found)
+								{
+									char allBuf[512];
+									sprintf(allBuf, "&4");
+									int w = 0;
+
+									SendChat("&cUnknown value \"%s\". Please enter one of these values:", &args[2], NULL, NULL, NULL);
+									for (int j=0; j<pluginOptions[i].value.str.validMax; j++)
+									{
+										if (w > 64)
+										{
+											// multi-line
+											SendChat(allBuf, NULL, NULL, NULL, NULL);
+											sprintf(allBuf, "&4");
+											w = 0;
+										}
+
+										strcat(allBuf, pluginOptions[i].value.str.validList[j]);
+										w += strlen(pluginOptions[i].value.str.validList[j]);
+										if (j != pluginOptions[i].value.str.validMax-1)
+										{
+											strcat(allBuf, ", ");
+											w += 2;
+										}
+									}
+									SendChat(allBuf, NULL, NULL, NULL, NULL);
+									return;
+								}
+							}
+
+							strcpy(pluginOptions[i].value.str.current, args[2].buffer);
+							SendChat("&a%s: %s", &pluginOptions[i].name, &args[2], NULL, NULL);
+						}
 						break;
 
 					case PLUGINOPTION_VALUE_RGB:
@@ -970,7 +1041,7 @@ void selfMarioTick(struct ScheduledTask* task)
 	}
 	obj->input.buttonA = KeyBind_IsPressed(KEYBIND_JUMP);
 	obj->input.buttonB = KeyBind_IsPressed(KEYBIND_DELETE_BLOCK);
-	obj->input.buttonZ = KeyBind_IsPressed(KEYBIND_SPEED);
+	// Z button is managed in Classic64_events.c
 	/*
 	Entities_->List[ENTITIES_SELF_ID]->Position.X = marioState.position[0];
 	Entities_->List[ENTITIES_SELF_ID]->Position.Y = marioState.position[1];
@@ -1079,6 +1150,8 @@ static void Classic64_Init()
 
 	Model_Register(marioModel_GetInstance());
 	Event_Register_(&ChatEvents_->ChatReceived, NULL, OnChatMessage);
+	Event_Register_(&InputEvents_->Down, NULL, OnKeyDown);
+	Event_Register_(&InputEvents_->Up, NULL, OnKeyUp);
 	Event_Register_(&GfxEvents_->ContextLost, NULL, OnContextLost);
 	Event_Register_(&GfxEvents_->ContextRecreated, NULL, OnContextRecreated);
 
@@ -1158,4 +1231,5 @@ static void LoadSymbolsFromGame(void) {
 	LoadSymbol(Lighting);
 	LoadSymbol(ChatEvents);
 	LoadSymbol(GfxEvents);
+	LoadSymbol(InputEvents);
 }

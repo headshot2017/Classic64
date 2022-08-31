@@ -42,6 +42,7 @@ struct MarioInstance // represents a Mario object in the plugin
 };
 extern struct MarioInstance *marioInstances[256];
 
+bool isGuiOpen();
 void OnMarioClientCmd(const cc_string* args, int argsCount);
 
 #endif
