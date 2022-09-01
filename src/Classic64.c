@@ -15,7 +15,6 @@
 #include "libsm64.h"
 #include "decomp/include/sm64.h"
 #include "decomp/include/surface_terrains.h"
-#include "decomp/include/seq_ids.h"
 #include "sha1/sha1.h"
 
 #include "Classic64_events.h"
@@ -488,6 +487,9 @@ void deleteMario(int i)
 	Gfx_DeleteDynamicVb(&obj->debuggerVertexID);
 #endif
 
+	// restore the original VTABLE if the entity still exists
+	if (Entities_->List[i]) Entities_->List[i]->VTABLE = marioInstances[i]->OriginalVTABLE;
+
 	free(marioInstances[i]);
 	marioInstances[i] = 0;
 }
@@ -763,6 +765,23 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 #endif
 }
 
+// custom callback for mario VTABLE
+void marioSetLocation(struct Entity* e, struct LocationUpdate* update, cc_bool interpolate)
+{
+	for (int i=0; i<256; i++)
+	{
+		if (Entities_->List[i] && Entities_->List[i] == e && marioInstances[i])
+		{
+			marioInstances[i]->OriginalVTABLE->SetLocation(e, update, interpolate);
+
+			if (update->Flags & LOCATIONUPDATE_POS)
+				sm64_set_mario_position(marioInstances[i]->ID, update->Pos.X*MARIO_SCALE, update->Pos.Y*MARIO_SCALE, update->Pos.Z*MARIO_SCALE);
+
+			break;
+		}
+	}
+}
+
 void marioTick(struct ScheduledTask* task)
 {
 	if (!allowTick) return;
@@ -804,6 +823,18 @@ void marioTick(struct ScheduledTask* task)
 #ifdef CLASSIC64_DEBUG
 				marioInstances[i]->debuggerVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, DEBUGGER_MAX_VERTICES);
 #endif
+
+				// backup the original entity VTABLE.
+				marioInstances[i]->OriginalVTABLE = Entities_->List[i]->VTABLE;
+
+				// replace this entity's VTABLE with one suited for mario.
+				// if the player walks into a portal or uses a teleport command, it'll set mario's position as well
+				// (sorry Unk, but it had to be done)
+				marioInstances[i]->marioVTABLE = (const struct EntityVTABLE){
+					Entities_->List[i]->VTABLE->Tick, Entities_->List[i]->VTABLE->Despawn, marioSetLocation,
+					Entities_->List[i]->VTABLE->GetCol, Entities_->List[i]->VTABLE->RenderModel, Entities_->List[i]->VTABLE->RenderName
+				};
+				Entities_->List[i]->VTABLE = &marioInstances[i]->marioVTABLE;
 			}
 		}
 		else if (marioInstances[i])
@@ -1014,7 +1045,7 @@ void selfMarioTick(struct ScheduledTask* task)
 		update.Flags |= LOCATIONUPDATE_YAW;
 		update.Yaw = Math_LerpAngle(Entities_->List[ENTITIES_SELF_ID]->Yaw, ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG), 0.03f);
 	}
-	Entities_->List[ENTITIES_SELF_ID]->VTABLE->SetLocation(Entities_->List[ENTITIES_SELF_ID], &update, false);
+	obj->OriginalVTABLE->SetLocation(Entities_->List[ENTITIES_SELF_ID], &update, false);
 	Entities_->List[ENTITIES_SELF_ID]->Velocity.X = Entities_->List[ENTITIES_SELF_ID]->Velocity.Y = Entities_->List[ENTITIES_SELF_ID]->Velocity.Z = 0;
 
 	if (Gui_->InputGrab) // menu is open
