@@ -903,6 +903,12 @@ void marioTick(struct ScheduledTask* task)
 			// fix for 1.3.2 until a future release comes out with the lighting system refactor
 			PackedCol lightCol = (Lighting_) ? Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE) : Env_->SunCol;
 
+			float scales[3] = {
+				Entities_->List[i]->ModelScale.X / MARIO_SCALE,
+				Entities_->List[i]->ModelScale.Y / MARIO_SCALE,
+				Entities_->List[i]->ModelScale.Z / MARIO_SCALE
+			};
+
 			for (int j=0; j<obj->geometry.numTrianglesUsed; j++)
 			{
 				bool hasTexture = (obj->geometry.uv[j*6+0] != 1 && obj->geometry.uv[j*6+1] != 1 && obj->geometry.uv[j*6+2] != 1 && obj->geometry.uv[j*6+3] != 1 && obj->geometry.uv[j*6+4] != 1 && obj->geometry.uv[j*6+5] != 1);
@@ -928,25 +934,25 @@ void marioTick(struct ScheduledTask* task)
 				PackedCol col = PackedCol_Tint(PackedCol_Make((bgr)?b:r, g, (bgr)?r:b, 255), lightCol);
 
 				obj->vertices[j*4+0] = (struct VertexTextured) {
-					(obj->geometry.position[j*9+0] - obj->state.position[0]) / MARIO_SCALE,
-					(obj->geometry.position[j*9+1] - obj->state.position[1]) / MARIO_SCALE,
-					(obj->geometry.position[j*9+2] - obj->state.position[2]) / MARIO_SCALE,
+					(obj->geometry.position[j*9+0] - obj->state.position[0]) * scales[0],
+					(obj->geometry.position[j*9+1] - obj->state.position[1]) * scales[1],
+					(obj->geometry.position[j*9+2] - obj->state.position[2]) * scales[2],
 					col,
 					(wingCap) ? 0 : 0.95, (wingCap) ? 0.95 : 0
 				};
 
 				obj->vertices[j*4+1] = (struct VertexTextured) {
-					(obj->geometry.position[j*9+3] - obj->state.position[0]) / MARIO_SCALE,
-					(obj->geometry.position[j*9+4] - obj->state.position[1]) / MARIO_SCALE,
-					(obj->geometry.position[j*9+5] - obj->state.position[2]) / MARIO_SCALE,
+					(obj->geometry.position[j*9+3] - obj->state.position[0]) * scales[0],
+					(obj->geometry.position[j*9+4] - obj->state.position[1]) * scales[1],
+					(obj->geometry.position[j*9+5] - obj->state.position[2]) * scales[2],
 					col,
 					(wingCap) ? 0 : 0.96, (wingCap) ? 0.96 : 0
 				};
 
 				obj->vertices[j*4+2] = (struct VertexTextured) {
-					(obj->geometry.position[j*9+6] - obj->state.position[0]) / MARIO_SCALE,
-					(obj->geometry.position[j*9+7] - obj->state.position[1]) / MARIO_SCALE,
-					(obj->geometry.position[j*9+8] - obj->state.position[2]) / MARIO_SCALE,
+					(obj->geometry.position[j*9+6] - obj->state.position[0]) * scales[0],
+					(obj->geometry.position[j*9+7] - obj->state.position[1]) * scales[1],
+					(obj->geometry.position[j*9+8] - obj->state.position[2]) * scales[2],
 					col,
 					(wingCap) ? 0.01 : 0.96, (wingCap) ? 0.96 : 1
 				};
