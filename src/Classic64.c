@@ -795,7 +795,7 @@ void marioTick(struct ScheduledTask* task)
 			uint32_t surfaces[128];
 			memset(surfaces, -1, sizeof(surfaces));
 			loadNewBlocks(i, Entities_->List[i]->Position.X, Entities_->List[i]->Position.Y, Entities_->List[i]->Position.Z, surfaces);
-			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, 0,0,0,0);
+			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, 0,0,0,0, (i == ENTITIES_SELF_ID));
 			if (ID == -1)
 			{
 				SendChat("&cFailed to spawn Mario", NULL, NULL, NULL, NULL);

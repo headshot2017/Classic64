@@ -808,6 +808,9 @@ void create_next_audio_buffer(s16 *samples, u32 num_samples) {
  * Called from threads: thread5_game_loop
  */
 void play_sound(s32 soundBits, f32 *pos) {
+    if (pos[0] == -1 && pos[1] == -1 && pos[2] == -1)
+        return; // Classic64: dirty hack for non-local players
+
     sSoundRequests[sSoundRequestCount].soundBits = soundBits;
     sSoundRequests[sSoundRequestCount].position = pos;
     sSoundRequestCount++;

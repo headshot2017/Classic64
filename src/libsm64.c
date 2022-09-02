@@ -193,7 +193,7 @@ SM64_LIB_FN void sm64_static_surfaces_load( const struct SM64Surface *surfaceArr
     surfaces_load_static( surfaceArray, numSurfaces );
 }
 
-SM64_LIB_FN int32_t sm64_mario_create( float x, float y, float z, int16_t rx, int16_t ry, int16_t rz, uint8_t fake )
+SM64_LIB_FN int32_t sm64_mario_create( float x, float y, float z, int16_t rx, int16_t ry, int16_t rz, uint8_t fake, bool isLocal )
 {
     int32_t marioIndex = obj_pool_alloc_index( &s_mario_instance_pool, sizeof( struct MarioInstance ));
     struct MarioInstance *newInstance = s_mario_instance_pool.objects[marioIndex];
@@ -243,6 +243,10 @@ SM64_LIB_FN int32_t sm64_mario_create( float x, float y, float z, int16_t rx, in
 		gMarioState->polePos[0] = 0;
 		gMarioState->polePos[1] = 0;
 		gMarioState->polePos[2] = 0;
+
+		gMarioState->marioObj->header.gfx.cameraToObject[0] = (isLocal) ? 0 : -1;
+		gMarioState->marioObj->header.gfx.cameraToObject[1] = (isLocal) ? 0 : -1;
+		gMarioState->marioObj->header.gfx.cameraToObject[2] = (isLocal) ? 0 : -1;
 
 		set_mario_action( gMarioState, ACT_SPAWN_SPIN_AIRBORNE, 0);
 		find_floor( x, y, z, &gMarioState->floor );
@@ -310,10 +314,6 @@ SM64_LIB_FN void sm64_mario_tick( int32_t marioId, const struct SM64MarioInputs 
     update_button( inputs->buttonA, A_BUTTON );
     update_button( inputs->buttonB, B_BUTTON );
     update_button( inputs->buttonZ, Z_TRIG );
-
-	gMarioState->marioObj->header.gfx.cameraToObject[0] = 0;
-	gMarioState->marioObj->header.gfx.cameraToObject[1] = 0;
-	gMarioState->marioObj->header.gfx.cameraToObject[2] = 0;
 
     gMarioState->area->camera->yaw = atan2s( inputs->camLookZ, inputs->camLookX );
 
