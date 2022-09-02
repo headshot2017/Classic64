@@ -257,7 +257,7 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 	}
 	else if (String_Compare(&args[0], &options[3]) == 0) // force-switch to mario
 	{
-		if (String_ContainsConst(&Server_->MOTD, "-hax") || String_ContainsConst(&Server_->MOTD, "-fly"))
+		if (!String_ContainsConst(&Server_->MOTD, "+mario64") && (String_ContainsConst(&Server_->MOTD, "-hax") || String_ContainsConst(&Server_->MOTD, "-fly")))
 		{
 			SendChat("&cHacks are disabled, cannot switch to Mario", NULL, NULL, NULL, NULL);
 			return;
