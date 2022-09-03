@@ -540,6 +540,38 @@ SM64_LIB_FN void sm64_set_mario_pole(int32_t marioId, float x, float y, float z,
 	gMarioState->marioObj->oMarioPolePos = gMarioState->pos[1] - gMarioState->polePos[1];
 }
 
+SM64_LIB_FN float sm64_get_mario_pole_x(int32_t marioId)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+	global_state_bind( globalState );
+
+	return gMarioState->polePos[0];
+}
+
+SM64_LIB_FN float sm64_get_mario_pole_y(int32_t marioId)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+	global_state_bind( globalState );
+
+	return gMarioState->polePos[1];
+}
+
+SM64_LIB_FN float sm64_get_mario_pole_z(int32_t marioId)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+	global_state_bind( globalState );
+
+	return gMarioState->polePos[2];
+}
+
+SM64_LIB_FN float sm64_get_mario_pole_height(int32_t marioId)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+	global_state_bind( globalState );
+
+	return gMarioState->poleHeight;
+}
+
 SM64_LIB_FN uint32_t sm64_surface_object_create( const struct SM64SurfaceObject *surfaceObject )
 {
     uint32_t id = surfaces_load_object( surfaceObject );
