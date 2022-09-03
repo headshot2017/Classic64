@@ -14,6 +14,15 @@
 #include "ClassiCube/Graphics.h"
 #include "ClassiCube/Vectors.h"
 
+enum
+{
+	OPCODE_MARIO_HAS_PLUGIN=1,
+	OPCODE_MARIO_TICK,
+	OPCODE_MARIO_SET_COLORS,
+	OPCODE_MARIO_SET_CAP,
+	OPCODE_MARIO_FORCE
+};
+
 extern bool serverHasPlugin;
 extern GfxResourceID marioTextureID;
 extern struct Bitmap marioBitmap;
@@ -51,6 +60,7 @@ struct MarioInstance // represents a Mario object in the plugin
 extern struct MarioInstance *marioInstances[256];
 
 bool isGuiOpen();
+void SendChat(const char* format, const void* arg1, const void* arg2, const void* arg3, const void* arg4);
 void OnMarioClientCmd(const cc_string* args, int argsCount);
 
 #endif

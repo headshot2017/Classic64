@@ -10,14 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 
-enum
-{
-	OPCODE_MARIO_HAS_PLUGIN,
-	OPCODE_MARIO_TICK,
-	OPCODE_MARIO_SET_COLORS,
-	OPCODE_MARIO_SET_CAP
-};
-
 void OnChatMessage(void* obj, const cc_string* msg, int msgType)
 {
 	// if message starts with this, run as a mario64 client command
@@ -90,14 +82,6 @@ void OnContextRecreated(void* obj)
 	}
 }
 
-void OnConnected(void* obj)
-{
-	// check if the server has the Classic64-MCGalaxy plugin
-	cc_uint8 data[64];
-	data[0] = OPCODE_MARIO_HAS_PLUGIN;
-	CPE_SendPluginMessage(64, data);
-}
-
 void OnPluginMessage(void* obj, cc_uint8 channel, cc_uint8* data)
 {
 	if (channel != 64) return;
@@ -105,7 +89,7 @@ void OnPluginMessage(void* obj, cc_uint8 channel, cc_uint8* data)
 	switch(data[0])
 	{
 		case OPCODE_MARIO_HAS_PLUGIN:
-			printf("server has classic64 plugin!\n");
+			SendChat("&aServer is running Classic64-MCGalaxy plugin!", NULL, NULL, NULL, NULL);
 			serverHasPlugin = true;
 			break;
 	}

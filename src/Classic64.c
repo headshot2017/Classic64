@@ -44,7 +44,7 @@
 #define clamp(x, Min, Max) ((x>Max)?Max:(x<Min)?Min:x)
 
 // shortcut to log messages to chat
-static void SendChat(const char* format, const void* arg1, const void* arg2, const void* arg3, const void* arg4) {
+void SendChat(const char* format, const void* arg1, const void* arg2, const void* arg3, const void* arg4) {
 	cc_string msg; char msgBuffer[256];
 	String_InitArray(msg, msgBuffer);
 
@@ -104,6 +104,7 @@ bool inited;
 bool allowTick; // false when loading world
 float marioInterpTicks;
 bool serverHasPlugin;
+bool checkedForPlugin;
 
 // mario's model (the hard part)
 GfxResourceID marioTextureID;
@@ -1229,6 +1230,7 @@ static void Classic64_Init()
 	ticksBeforeSpawn = 1;
 	marioInterpTicks = 0;
 	serverHasPlugin = false;
+	checkedForPlugin = false;
 
 	// Mario texture is 704x64 RGBA (changed to 1024x64 in this classicube plugin)
 	marioTextureUint8 = (uint8_t*)malloc(4 * SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT);
@@ -1278,7 +1280,6 @@ static void Classic64_Init()
 	Event_Register_(&InputEvents_->Up, NULL, OnKeyUp);
 	Event_Register_(&GfxEvents_->ContextLost, NULL, OnContextLost);
 	Event_Register_(&GfxEvents_->ContextRecreated, NULL, OnContextRecreated);
-	Event_Register_(&NetEvents_->Connected, NULL, OnConnected);
 	Event_Register_(&NetEvents_->PluginMessageReceived, NULL, OnPluginMessage);
 
 	ScheduledTask_Add(1./30, marioTick);
@@ -1315,6 +1316,16 @@ static void Classic64_OnNewMapLoaded()
 	if (!inited) return;
 	allowTick = true;
 	ticksBeforeSpawn = 1;
+
+	if (!checkedForPlugin)
+	{
+		checkedForPlugin = true;
+
+		// this didn't work in the "OnConnected" event for some reason
+		cc_uint8 data[64] = {0};
+		data[0] = OPCODE_MARIO_HAS_PLUGIN;
+		CPE_SendPluginMessage(64, data);
+	}
 }
 
 EXPORT int Plugin_ApiVersion = 1;
