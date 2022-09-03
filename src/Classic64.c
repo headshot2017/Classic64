@@ -266,8 +266,19 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 			SendChat("&cHacks are disabled, cannot switch to Mario", NULL, NULL, NULL, NULL);
 			return;
 		}
-		cc_string model = String_FromConst( (strcmp(Entities_->List[ENTITIES_SELF_ID]->Model->name, "mario64") == 0) ? "human" : "mario64" );
-		Entity_SetModel(Entities_->List[ENTITIES_SELF_ID], &model);
+
+		if (!serverHasPlugin)
+		{
+			cc_string model = String_FromConst( (strcmp(Entities_->List[ENTITIES_SELF_ID]->Model->name, "mario64") == 0) ? "human" : "mario64" );
+			Entity_SetModel(Entities_->List[ENTITIES_SELF_ID], &model);
+		}
+		else
+		{
+			cc_uint8 data[64] = {0};
+			data[0] = OPCODE_MARIO_FORCE;
+			data[1] = (strcmp(Entities_->List[ENTITIES_SELF_ID]->Model->name, "mario64") == 0) ? 0 : 1; // turn off or on
+			CPE_SendPluginMessage(64, data);
+		}
 		return;
 	}
 	else if (String_Compare(&args[0], &options[4]) == 0) // change plugin settings
