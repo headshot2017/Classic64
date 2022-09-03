@@ -5,9 +5,18 @@
 
 #include "ClassiCube/Entity.h"
 #include "ClassiCube/Graphics.h"
+#include "ClassiCube/Protocol.h"
 
 #include <stdio.h>
 #include <string.h>
+
+enum
+{
+	OPCODE_MARIO_HAS_PLUGIN,
+	OPCODE_MARIO_TICK,
+	OPCODE_MARIO_SET_COLORS,
+	OPCODE_MARIO_SET_CAP
+};
 
 void OnChatMessage(void* obj, const cc_string* msg, int msgType)
 {
@@ -78,5 +87,26 @@ void OnContextRecreated(void* obj)
 			obj->debuggerVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, DEBUGGER_MAX_VERTICES);
 #endif
 		}
+	}
+}
+
+void OnConnected(void* obj)
+{
+	// check if the server has the Classic64-MCGalaxy plugin
+	cc_uint8 data[64];
+	data[0] = OPCODE_MARIO_HAS_PLUGIN;
+	CPE_SendPluginMessage(64, data);
+}
+
+void OnPluginMessage(void* obj, cc_uint8 channel, cc_uint8* data)
+{
+	if (channel != 64) return;
+
+	switch(data[0])
+	{
+		case OPCODE_MARIO_HAS_PLUGIN:
+			printf("server has classic64 plugin!\n");
+			serverHasPlugin = true;
+			break;
 	}
 }

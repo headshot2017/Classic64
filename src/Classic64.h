@@ -14,6 +14,7 @@
 #include "ClassiCube/Graphics.h"
 #include "ClassiCube/Vectors.h"
 
+extern bool serverHasPlugin;
 extern GfxResourceID marioTextureID;
 extern struct Bitmap marioBitmap;
 

@@ -86,6 +86,7 @@ static struct _Lighting* Lighting_;
 static struct _ChatEventsList* ChatEvents_;
 static struct _GfxEventsList* GfxEvents_;
 static struct _InputEventsList* InputEvents_;
+static struct _NetEventsList* NetEvents_;
 
 bool isGuiOpen() {return Gui_->InputGrab;}
 
@@ -102,6 +103,7 @@ int ticksBeforeSpawn;
 bool inited;
 bool allowTick; // false when loading world
 float marioInterpTicks;
+bool serverHasPlugin;
 
 // mario's model (the hard part)
 GfxResourceID marioTextureID;
@@ -1226,6 +1228,7 @@ static void Classic64_Init()
 	allowTick = false;
 	ticksBeforeSpawn = 1;
 	marioInterpTicks = 0;
+	serverHasPlugin = false;
 
 	// Mario texture is 704x64 RGBA (changed to 1024x64 in this classicube plugin)
 	marioTextureUint8 = (uint8_t*)malloc(4 * SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT);
@@ -1275,6 +1278,8 @@ static void Classic64_Init()
 	Event_Register_(&InputEvents_->Up, NULL, OnKeyUp);
 	Event_Register_(&GfxEvents_->ContextLost, NULL, OnContextLost);
 	Event_Register_(&GfxEvents_->ContextRecreated, NULL, OnContextRecreated);
+	Event_Register_(&NetEvents_->Connected, NULL, OnConnected);
+	Event_Register_(&NetEvents_->PluginMessageReceived, NULL, OnPluginMessage);
 
 	ScheduledTask_Add(1./30, marioTick);
 	ScheduledTask_Add(1./300, selfMarioTick);
@@ -1353,4 +1358,5 @@ static void LoadSymbolsFromGame(void) {
 	LoadSymbol(ChatEvents);
 	LoadSymbol(GfxEvents);
 	LoadSymbol(InputEvents);
+	LoadSymbol(NetEvents);
 }
