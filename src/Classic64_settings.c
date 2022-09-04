@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -55,9 +54,9 @@ const struct RGBCol defaultColors[] = {
 	{0  , 0  , 255}, // Overalls
 	{255, 0  , 0  }, // Shirt/Hat
 	{254, 193, 121}, // Skin
-	{114, 28 , 14 }, // Hair	
+	{115, 6  , 0  }, // Hair
 	{255, 255, 255}, // Gloves
-	{115, 6  , 0  }, // Shoes
+	{114, 28 , 14 }, // Shoes
 };
 
 struct PluginOption pluginOptions[] = {
@@ -120,7 +119,7 @@ struct PluginOption pluginOptions[] = {
 	{
 		String_FromConst("color_hair"),
 		{String_FromConst("&eSet colors for Mario's hair.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col={114,28,14}}, false
+		1, PLUGINOPTION_VALUE_RGB, {.col={115,6,0}}, false
 	},
 	{
 		String_FromConst("color_gloves"),
@@ -130,7 +129,7 @@ struct PluginOption pluginOptions[] = {
 	{
 		String_FromConst("color_shoes"),
 		{String_FromConst("&eSet colors for Mario's shoes.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col={115,6,0}}, false
+		1, PLUGINOPTION_VALUE_RGB, {.col={114,28,14}}, false
 	},
 
 #ifdef CLASSIC64_DEBUG

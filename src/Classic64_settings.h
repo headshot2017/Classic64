@@ -1,6 +1,8 @@
 #ifndef CLASSIC64_SETTINGS_H
 #define CLASSIC64_SETTINGS_H
 
+#include <stdbool.h>
+
 #include "ClassiCube/String.h"
 
 enum
