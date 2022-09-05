@@ -941,7 +941,6 @@ void marioTick(struct ScheduledTask* task)
 			if (marioUpdates[i])
 			{
 				// change remote mario player's cap and colors here
-				printf("change colors for %d\n", i);
 				if (marioUpdates[i]->flags & MARIOUPDATE_FLAG_COLORS)
 				{
 					obj->customColors = marioUpdates[i]->customColors;
