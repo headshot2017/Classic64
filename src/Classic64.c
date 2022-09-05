@@ -98,8 +98,8 @@ bool isBlockSolid(BlockID block)
 // mario variables
 uint8_t *marioTextureUint8;
 struct MarioInstance *marioInstances[256];
+struct MarioColorUpdate *marioColorUpdates[256];
 
-int ticksBeforeSpawn;
 bool inited;
 bool allowTick; // false when loading world
 float marioInterpTicks;
@@ -168,6 +168,34 @@ static struct Model* marioModel_GetInstance(void) {
 	mario_model.usesHumanSkin = false;
 	mario_model.bobbing = false;
 	return &mario_model;
+}
+
+void sendMarioColors()
+{
+	if (!serverHasPlugin) return;
+
+	cc_uint8 data[64] = {0};
+	data[0] = OPCODE_MARIO_SET_COLORS;
+	data[1] = pluginOptions[PLUGINOPTION_CUSTOM_COLORS].value.on ? 1 : 0;
+	if (pluginOptions[PLUGINOPTION_CUSTOM_COLORS].value.on) // append custom colors
+	{
+		for (int i=0; i<6; i++)
+		{
+			data[2 + (i*3) + 0] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + i].value.col.r;
+			data[2 + (i*3) + 1] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + i].value.col.g;
+			data[2 + (i*3) + 2] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + i].value.col.b;
+		}
+	}
+	CPE_SendPluginMessage(64, data);
+}
+
+void updateMarioColors(int i, bool on, struct RGBCol colors[6])
+{
+	if (!marioInstances[i]) return;
+	marioInstances[i]->customColors = on;
+	memcpy(&marioInstances[i]->colors, colors, sizeof(struct RGBCol) * 6);
+
+	if (i == ENTITIES_SELF_ID) sendMarioColors();
 }
 
 // chat command
@@ -358,6 +386,12 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 						}
 
 						SendChat("&a%s: %s", &pluginOptions[i].name, &args[2], NULL, NULL);
+						if (i == PLUGINOPTION_CUSTOM_COLORS)
+						{
+							struct RGBCol newColors[6];
+							for (int j=0; j<6; j++) newColors[j] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + j].value.col;
+							updateMarioColors(ENTITIES_SELF_ID, pluginOptions[i].value.on, newColors);
+						}
 						break;
 
 					case PLUGINOPTION_VALUE_NUMBER:
@@ -446,6 +480,10 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 							SendChat("&cParse failed. Please enter RGB number values between 0 and 255.", NULL, NULL, NULL, NULL);
 							return;
 						}
+
+						struct RGBCol newColors[6];
+						for (int j=0; j<6; j++) newColors[j] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + j].value.col;
+						updateMarioColors(ENTITIES_SELF_ID, pluginOptions[PLUGINOPTION_CUSTOM_COLORS].value.on, newColors);
 
 						SendChat("&a%s: %s, %s, %s", &pluginOptions[i].name, &args[2], &args[3], &args[4]);
 						break;
@@ -803,8 +841,13 @@ void marioTick(struct ScheduledTask* task)
 
 	for (int i=0; i<256; i++)
 	{
-		if (!Entities_->List[i]) continue;
-		if (!marioInstances[i] && ticksBeforeSpawn <= 0 && strcmp(Entities_->List[i]->Model->name, "mario64") == 0)
+		if (!Entities_->List[i])
+		{
+			deleteMario(i);
+			continue;
+		}
+
+		if (!marioInstances[i] && strcmp(Entities_->List[i]->Model->name, "mario64") == 0)
 		{
 			// spawn mario. have some temporary variables for the surface IDs and mario ID
 			uint32_t surfaces[128];
@@ -813,7 +856,7 @@ void marioTick(struct ScheduledTask* task)
 			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, 0,0,0,0, (i == ENTITIES_SELF_ID));
 			if (ID == -1)
 			{
-				SendChat("&cFailed to spawn Mario", NULL, NULL, NULL, NULL);
+				if (i == ENTITIES_SELF_ID) SendChat("&cFailed to spawn Mario", NULL, NULL, NULL, NULL);
 			}
 			else
 			{
@@ -839,6 +882,18 @@ void marioTick(struct ScheduledTask* task)
 				marioInstances[i]->debuggerVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, DEBUGGER_MAX_VERTICES);
 #endif
 
+				if (i == ENTITIES_SELF_ID)
+				{
+					struct RGBCol newColors[6];
+					for (int j=0; j<6; j++) newColors[j] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + j].value.col;
+					updateMarioColors(ENTITIES_SELF_ID, pluginOptions[PLUGINOPTION_CUSTOM_COLORS].value.on, newColors);
+				}
+				else
+				{
+					memcpy(&marioInstances[i]->colors, defaultColors, sizeof(struct RGBCol) * 6);
+					marioInstances[i]->customColors = false;
+				}
+
 				// backup the original entity VTABLE.
 				marioInstances[i]->OriginalVTABLE = Entities_->List[i]->VTABLE;
 
@@ -860,6 +915,17 @@ void marioTick(struct ScheduledTask* task)
 				// no longer mario, delete from memory
 				deleteMario(i);
 				continue;
+			}
+
+			if (marioColorUpdates[i])
+			{
+				// change colors here
+				printf("change colors for %d\n", i);
+				obj->customColors = marioColorUpdates[i]->on;
+				memcpy(&obj->colors, marioColorUpdates[i]->newColors, sizeof(struct RGBCol) * 6);
+
+				free(marioColorUpdates[i]);
+				marioColorUpdates[i] = NULL;
 			}
 
 			if (i != ENTITIES_SELF_ID) // not you
@@ -948,7 +1014,6 @@ void marioTick(struct ScheduledTask* task)
 
 			obj->numTexturedTriangles = 0;
 			bool bgr = (pluginOptions[PLUGINOPTION_BGR].value.on);
-			bool customColors = (pluginOptions[PLUGINOPTION_CUSTOM_COLORS].value.on);
 
 			// fix for 1.3.2 until a future release comes out with the lighting system refactor
 			PackedCol lightCol = (Lighting_) ? Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE) : Env_->SunCol;
@@ -967,15 +1032,15 @@ void marioTick(struct ScheduledTask* task)
 				uint8_t r = obj->geometry.color[j*9+0]*255;
 				uint8_t g = obj->geometry.color[j*9+1]*255;
 				uint8_t b = obj->geometry.color[j*9+2]*255;
-				if (customColors && i == ENTITIES_SELF_ID) // only give yourself custom colors
+				if (obj->customColors)
 				{
 					for (int c = 0; c < 6; c++)
 					{
 						if (r == defaultColors[c].r && g == defaultColors[c].g && b == defaultColors[c].b)
 						{
-							r = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + c].value.col.r;
-							g = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + c].value.col.g;
-							b = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + c].value.col.b;
+							r = obj->colors[c].r;
+							g = obj->colors[c].g;
+							b = obj->colors[c].b;
 							break;
 						}
 					}
@@ -1041,8 +1106,6 @@ void marioTick(struct ScheduledTask* task)
 			//}
 		}
 	}
-
-	if (ticksBeforeSpawn > 0) ticksBeforeSpawn--;
 }
 
 void selfMarioTick(struct ScheduledTask* task)
@@ -1188,7 +1251,11 @@ void selfMarioTick(struct ScheduledTask* task)
 static void Classic64_Init()
 {
 	LoadSymbolsFromGame();
-	for (int i=0; i<256; i++) marioInstances[i] = 0;
+	for (int i=0; i<256; i++)
+	{
+		marioInstances[i] = 0;
+		marioColorUpdates[i] = 0;
+	}
 	loadSettings();
 	inited = false;
 
@@ -1238,7 +1305,6 @@ static void Classic64_Init()
 	// all good!
 	inited = true;
 	allowTick = false;
-	ticksBeforeSpawn = 1;
 	marioInterpTicks = 0;
 	serverHasPlugin = false;
 	checkedForPlugin = false;
@@ -1326,7 +1392,6 @@ static void Classic64_OnNewMapLoaded()
 {
 	if (!inited) return;
 	allowTick = true;
-	ticksBeforeSpawn = 1;
 
 	if (!checkedForPlugin)
 	{
@@ -1335,6 +1400,12 @@ static void Classic64_OnNewMapLoaded()
 		// this didn't work in the "OnConnected" event for some reason
 		cc_uint8 data[64] = {0};
 		data[0] = OPCODE_MARIO_HAS_PLUGIN;
+		CPE_SendPluginMessage(64, data);
+	}
+	else if (serverHasPlugin)
+	{
+		cc_uint8 data[64] = {0};
+		data[0] = OPCODE_MARIO_REQUEST_COLORS;
 		CPE_SendPluginMessage(64, data);
 	}
 }

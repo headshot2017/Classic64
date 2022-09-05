@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 void OnChatMessage(void* obj, const cc_string* msg, int msgType)
 {
@@ -90,7 +91,46 @@ void OnPluginMessage(void* obj, cc_uint8 channel, cc_uint8* data)
 	{
 		case OPCODE_MARIO_HAS_PLUGIN:
 			SendChat("&aServer is running Classic64-MCGalaxy plugin!", NULL, NULL, NULL, NULL);
-			serverHasPlugin = true;
+			if (!serverHasPlugin)
+			{
+				serverHasPlugin = true;
+
+				sendMarioColors();
+				cc_uint8 send[64] = {0};
+				send[0] = OPCODE_MARIO_REQUEST_COLORS;
+				CPE_SendPluginMessage(64, send);
+			}
+			break;
+
+		case OPCODE_MARIO_TICK:
+			break;
+
+		case OPCODE_MARIO_SET_COLORS:
+			{
+				cc_uint8 who = data[1];
+				cc_uint8 on = data[2];
+				if (!marioColorUpdates[who])
+				{
+					marioColorUpdates[who] = (struct MarioColorUpdate*)malloc(sizeof(struct MarioColorUpdate));
+					memset(marioColorUpdates[who]->newColors, 0, sizeof(struct RGBCol) * 6);
+				}
+
+				marioColorUpdates[who]->on = on;
+				if (on)
+				{
+					struct RGBCol newColors[6];
+					for (int i=0; i<6; i++)
+					{
+						newColors[i].r = data[3 + (i*3) + 0];
+						newColors[i].g = data[3 + (i*3) + 1];
+						newColors[i].b = data[3 + (i*3) + 2];
+					}
+					memcpy(&marioColorUpdates[who]->newColors, newColors, sizeof(struct RGBCol) * 6);
+				}
+			}
+			break;
+
+		case OPCODE_MARIO_SET_CAP:
 			break;
 	}
 }

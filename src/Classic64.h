@@ -7,6 +7,7 @@
 
 #include <inttypes.h>
 
+#include "Classic64_settings.h"
 #include "libsm64.h"
 
 #include "ClassiCube/Bitmap.h"
@@ -19,9 +20,17 @@ enum
 	OPCODE_MARIO_HAS_PLUGIN=1,
 	OPCODE_MARIO_TICK,
 	OPCODE_MARIO_SET_COLORS,
+	OPCODE_MARIO_REQUEST_COLORS,
 	OPCODE_MARIO_SET_CAP,
 	OPCODE_MARIO_FORCE
 };
+
+struct MarioColorUpdate
+{
+	bool on;
+	struct RGBCol newColors[6];
+};
+extern struct MarioColorUpdate *marioColorUpdates[256];
 
 extern bool serverHasPlugin;
 extern GfxResourceID marioTextureID;
@@ -33,6 +42,8 @@ struct MarioInstance // represents a Mario object in the plugin
 	uint32_t surfaces[128];
 	const struct EntityVTABLE* OriginalVTABLE;
 	struct EntityVTABLE marioVTABLE;
+	bool customColors;
+	struct RGBCol colors[6];
 
 	Vec3 lastPos;
 	Vec3 currPos;
@@ -60,6 +71,9 @@ struct MarioInstance // represents a Mario object in the plugin
 extern struct MarioInstance *marioInstances[256];
 
 bool isGuiOpen();
+void updateMarioColors(int i, bool on, struct RGBCol colors[6]);
+void sendMarioColors();
+
 void SendChat(const char* format, const void* arg1, const void* arg2, const void* arg3, const void* arg4);
 void OnMarioClientCmd(const cc_string* args, int argsCount);
 
