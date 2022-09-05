@@ -94,11 +94,7 @@ void OnPluginMessage(void* obj, cc_uint8 channel, cc_uint8* data)
 			if (!serverHasPlugin)
 			{
 				serverHasPlugin = true;
-
 				sendMarioColors();
-				cc_uint8 send[64] = {0};
-				send[0] = OPCODE_MARIO_REQUEST_COLORS;
-				CPE_SendPluginMessage(64, send);
 			}
 			break;
 

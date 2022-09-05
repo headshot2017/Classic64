@@ -1402,12 +1402,6 @@ static void Classic64_OnNewMapLoaded()
 		data[0] = OPCODE_MARIO_HAS_PLUGIN;
 		CPE_SendPluginMessage(64, data);
 	}
-	else if (serverHasPlugin)
-	{
-		cc_uint8 data[64] = {0};
-		data[0] = OPCODE_MARIO_REQUEST_COLORS;
-		CPE_SendPluginMessage(64, data);
-	}
 }
 
 EXPORT int Plugin_ApiVersion = 1;

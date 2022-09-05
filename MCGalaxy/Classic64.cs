@@ -13,7 +13,6 @@ enum MarioOpcodes
 	OPCODE_MARIO_HAS_PLUGIN=1,
 	OPCODE_MARIO_TICK,
 	OPCODE_MARIO_SET_COLORS,
-	OPCODE_MARIO_REQUEST_COLORS,
 	OPCODE_MARIO_SET_CAP,
 	OPCODE_MARIO_FORCE
 }
@@ -55,6 +54,7 @@ namespace MCGalaxy
 			OnPlayerConnectEvent.Register(OnPlayerConnect, Priority.Critical);
 			OnPlayerDisconnectEvent.Register(OnPlayerDisconnect, Priority.Critical);
 			OnJoinedLevelEvent.Register(OnJoinedLevel, Priority.Critical);
+			OnSentMapEvent.Register(OnSentMap, Priority.Critical);
 			ModelInfo.Models.Add(new ModelInfo("mario64", 10,10,10, 15));
 		}
 		
@@ -64,6 +64,7 @@ namespace MCGalaxy
 			OnPlayerConnectEvent.Unregister(OnPlayerConnect);
 			OnPlayerDisconnectEvent.Unregister(OnPlayerDisconnect);
 			OnJoinedLevelEvent.Unregister(OnJoinedLevel);
+			OnSentMapEvent.Unregister(OnSentMap);
 
 			foreach (ModelInfo m in ModelInfo.Models)
 			{
@@ -137,8 +138,17 @@ namespace MCGalaxy
 		static void OnJoinedLevel(Player p, Level prevLevel, Level level, ref bool announce)
 		{
 			// send all Mario colors and caps
-			if (p.Model.CaselessEq("mario64"))
-				sendColorsToEveryone(p);
+			if (p.Model.CaselessEq("mario64")) sendColorsToEveryone(p);
+			receiveColorsFromEveryone(p);
+		}
+
+		static void OnSentMap(Player p, Level prevLevel, Level level)
+		{
+			if (prevLevel == level)
+			{
+				// map was reloaded with /reload, or because 10000+ blocks were changed
+				receiveColorsFromEveryone(p);
+			}
 		}
 
 		static void OnPluginMessageReceived(Player p, byte channel, byte[] data)
@@ -163,10 +173,6 @@ namespace MCGalaxy
 						marioColors[p.name].colors[i].b = data[2 + (i*3) + 2];
 					}
 					sendColorsToEveryone(p);
-					break;
-
-				case MarioOpcodes.OPCODE_MARIO_REQUEST_COLORS:
-					receiveColorsFromEveryone(p);
 					break;
 
 				case MarioOpcodes.OPCODE_MARIO_SET_CAP:
