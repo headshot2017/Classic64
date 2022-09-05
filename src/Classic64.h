@@ -21,15 +21,21 @@ enum
 	OPCODE_MARIO_TICK,
 	OPCODE_MARIO_SET_COLORS,
 	OPCODE_MARIO_SET_CAP,
-	OPCODE_MARIO_FORCE
+	OPCODE_MARIO_FORCE,
+
+	MARIOUPDATE_FLAG_COLORS	= (1 << 0),
+	MARIOUPDATE_FLAG_CAP	= (1 << 1),
 };
 
-struct MarioColorUpdate
+struct MarioUpdate
 {
-	bool on;
+	int flags;
+
+	uint32_t cap;
+	bool customColors;
 	struct RGBCol newColors[6];
 };
-extern struct MarioColorUpdate *marioColorUpdates[256];
+extern struct MarioUpdate *marioUpdates[256];
 
 extern bool serverHasPlugin;
 extern GfxResourceID marioTextureID;
@@ -70,6 +76,7 @@ struct MarioInstance // represents a Mario object in the plugin
 extern struct MarioInstance *marioInstances[256];
 
 bool isGuiOpen();
+void setMarioCap(int i, uint32_t capFlag);
 void updateMarioColors(int i, bool on, struct RGBCol colors[6]);
 void sendMarioColors();
 

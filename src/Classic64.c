@@ -19,6 +19,7 @@
 
 #include "Classic64_events.h"
 #include "Classic64_settings.h"
+#include "Classic64_network.h"
 #include "Classic64.h"
 
 #include "ClassiCube/Bitmap.h"
@@ -98,7 +99,7 @@ bool isBlockSolid(BlockID block)
 // mario variables
 uint8_t *marioTextureUint8;
 struct MarioInstance *marioInstances[256];
-struct MarioColorUpdate *marioColorUpdates[256];
+struct MarioUpdate *marioUpdates[256];
 
 bool inited;
 bool allowTick; // false when loading world
@@ -168,6 +169,21 @@ static struct Model* marioModel_GetInstance(void) {
 	mario_model.usesHumanSkin = false;
 	mario_model.bobbing = false;
 	return &mario_model;
+}
+
+void setMarioCap(int i, uint32_t capFlag)
+{
+	if (!marioInstances[i]) return;
+	sm64_set_mario_state(marioInstances[i]->ID, 0);
+	sm64_mario_interact_cap(marioInstances[i]->ID, capFlag, 65535, 0);
+
+	if (i == ENTITIES_SELF_ID)
+	{
+		cc_uint8 data[64] = {0};
+		data[0] = OPCODE_MARIO_SET_CAP;
+		Stream_SetU32_BE(&data[1], capFlag);
+		CPE_SendPluginMessage(64, data);
+	}
 }
 
 void sendMarioColors()
@@ -269,8 +285,7 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 		{
 			if (String_Compare(&args[1], &caps[i].name) == 0)
 			{
-				sm64_set_mario_state(marioInstances[ENTITIES_SELF_ID]->ID, 0);
-				sm64_mario_interact_cap(marioInstances[ENTITIES_SELF_ID]->ID, caps[i].capFlag, 65535, 0);
+				setMarioCap(ENTITIES_SELF_ID, caps[i].capFlag);
 				return;
 			}
 		}
@@ -526,6 +541,12 @@ void deleteMario(int i)
 	if (!marioInstances[i]) return;
 	struct MarioInstance *obj = marioInstances[i];
 	printf("delete mario %d\n", i);
+
+	if (marioUpdates[i])
+	{
+		free(marioUpdates[i]);
+		marioUpdates[i] = 0;
+	}
 
 	deleteBlocks(obj->surfaces);
 	sm64_mario_delete(obj->ID);
@@ -917,15 +938,20 @@ void marioTick(struct ScheduledTask* task)
 				continue;
 			}
 
-			if (marioColorUpdates[i])
+			if (marioUpdates[i])
 			{
-				// change colors here
+				// change remote mario player's cap and colors here
 				printf("change colors for %d\n", i);
-				obj->customColors = marioColorUpdates[i]->on;
-				memcpy(&obj->colors, marioColorUpdates[i]->newColors, sizeof(struct RGBCol) * 6);
+				if (marioUpdates[i]->flags & MARIOUPDATE_FLAG_COLORS)
+				{
+					obj->customColors = marioUpdates[i]->customColors;
+					memcpy(&obj->colors, marioUpdates[i]->newColors, sizeof(struct RGBCol) * 6);
+				}
+				if (marioUpdates[i]->flags & MARIOUPDATE_FLAG_CAP)
+					setMarioCap(i, marioUpdates[i]->cap);
 
-				free(marioColorUpdates[i]);
-				marioColorUpdates[i] = NULL;
+				free(marioUpdates[i]);
+				marioUpdates[i] = NULL;
 			}
 
 			if (i != ENTITIES_SELF_ID) // not you
@@ -1254,7 +1280,7 @@ static void Classic64_Init()
 	for (int i=0; i<256; i++)
 	{
 		marioInstances[i] = 0;
-		marioColorUpdates[i] = 0;
+		marioUpdates[i] = 0;
 	}
 	loadSettings();
 	inited = false;

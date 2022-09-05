@@ -23,18 +23,17 @@ public struct RGBCol
 	public byte r, g, b;
 }
 
-public class marioColor
+public class marioInstance
 {
-	public marioColor(bool ON) {setup(ON);}
-	public marioColor() {setup(false);}
-
-	void setup(bool ON)
+	public marioInstance()
 	{
-		on = ON;
+		cap = 0x00000001; // MARIO_NORMAL_CAP
+		customColors = false;
 		colors = new RGBCol[6];
 	}
 
-	public bool on;
+	public uint cap;
+	public bool customColors;
 	public RGBCol[]	colors;
 }
 
@@ -46,7 +45,7 @@ namespace MCGalaxy
         public override string MCGalaxy_Version { get { return "1.9.4.0"; } }
         public override string creator { get { return "Headshotnoby"; } }
 
-		public static Dictionary<string, marioColor> marioColors = new Dictionary<string, marioColor>();
+		public static Dictionary<string, marioInstance> marioSettings = new Dictionary<string, marioInstance>();
 
 		public override void Load(bool startup)
 		{
@@ -82,16 +81,31 @@ namespace MCGalaxy
 
 			data[0] = (byte)MarioOpcodes.OPCODE_MARIO_SET_COLORS;
 			data[1] = p.EntityID;
-			data[2] = (byte)(marioColors[p.name].on ? 1 : 0);
-			if (marioColors[p.name].on)
+			data[2] = (byte)(marioSettings[p.name].customColors ? 1 : 0);
+			if (marioSettings[p.name].customColors)
 			{
 				for (int i=0; i<6; i++)
 				{
-					data[3 + (i*3) + 0] = marioColors[p.name].colors[i].r;
-					data[3 + (i*3) + 1] = marioColors[p.name].colors[i].g;
-					data[3 + (i*3) + 2] = marioColors[p.name].colors[i].b;
+					data[3 + (i*3) + 0] = marioSettings[p.name].colors[i].r;
+					data[3 + (i*3) + 1] = marioSettings[p.name].colors[i].g;
+					data[3 + (i*3) + 2] = marioSettings[p.name].colors[i].b;
 				}
 			}
+
+			foreach (Player other in PlayerInfo.Online.Items)
+			{
+				if (other.level != p.level || p == other) continue; // only send to those in the same map
+				other.Send(Packet.PluginMessage(64, data));
+			}
+		}
+
+		static void sendCapToEveryone(Player p)
+		{
+			byte[] data = new byte[64];
+
+			data[0] = (byte)MarioOpcodes.OPCODE_MARIO_SET_CAP;
+			data[1] = p.EntityID;
+			NetUtils.WriteI32((int)marioSettings[p.name].cap, data, 2);
 
 			foreach (Player other in PlayerInfo.Online.Items)
 			{
@@ -110,14 +124,14 @@ namespace MCGalaxy
 
 				data[0] = (byte)MarioOpcodes.OPCODE_MARIO_SET_COLORS;
 				data[1] = other.EntityID;
-				data[2] = (byte)(marioColors[other.name].on ? 1 : 0);
-				if (marioColors[other.name].on)
+				data[2] = (byte)(marioSettings[other.name].customColors ? 1 : 0);
+				if (marioSettings[other.name].customColors)
 				{
 					for (int i=0; i<6; i++)
 					{
-						data[3 + (i*3) + 0] = marioColors[other.name].colors[i].r;
-						data[3 + (i*3) + 1] = marioColors[other.name].colors[i].g;
-						data[3 + (i*3) + 2] = marioColors[other.name].colors[i].b;
+						data[3 + (i*3) + 0] = marioSettings[other.name].colors[i].r;
+						data[3 + (i*3) + 1] = marioSettings[other.name].colors[i].g;
+						data[3 + (i*3) + 2] = marioSettings[other.name].colors[i].b;
 					}
 				}
 
@@ -125,21 +139,42 @@ namespace MCGalaxy
 			}
 		}
 
+		static void receiveCapsFromEveryone(Player p)
+		{
+			foreach (Player other in PlayerInfo.Online.Items)
+			{
+				if (other.level != p.level || p == other) continue; // only send to those in the same map
+
+				byte[] data = new byte[64];
+
+				data[0] = (byte)MarioOpcodes.OPCODE_MARIO_SET_CAP;
+				data[1] = other.EntityID;
+				NetUtils.WriteI32((int)marioSettings[other.name].cap, data, 2);
+
+				p.Send(Packet.PluginMessage(64, data));
+			}
+		}
+
 		static void OnPlayerConnect(Player p)
 		{
-			marioColors[p.name] = new marioColor(false);
+			marioSettings[p.name] = new marioInstance();
 		}
 
 		static void OnPlayerDisconnect(Player p, string reason)
 		{
-			marioColors.Remove(p.name);
+			marioSettings.Remove(p.name);
 		}
 
 		static void OnJoinedLevel(Player p, Level prevLevel, Level level, ref bool announce)
 		{
 			// send all Mario colors and caps
-			if (p.Model.CaselessEq("mario64")) sendColorsToEveryone(p);
+			if (p.Model.CaselessEq("mario64"))
+			{
+				sendColorsToEveryone(p);
+				sendCapToEveryone(p);
+			}
 			receiveColorsFromEveryone(p);
+			receiveCapsFromEveryone(p);
 		}
 
 		static void OnSentMap(Player p, Level prevLevel, Level level)
@@ -148,6 +183,7 @@ namespace MCGalaxy
 			{
 				// map was reloaded with /reload, or because 10000+ blocks were changed
 				receiveColorsFromEveryone(p);
+				receiveCapsFromEveryone(p);
 			}
 		}
 
@@ -165,17 +201,19 @@ namespace MCGalaxy
 					break;
 
 				case MarioOpcodes.OPCODE_MARIO_SET_COLORS:
-					marioColors[p.name].on = (data[1] == 1);
+					marioSettings[p.name].customColors = (data[1] == 1);
 					for (int i=0; i<6; i++)
 					{
-						marioColors[p.name].colors[i].r = data[2 + (i*3) + 0];
-						marioColors[p.name].colors[i].g = data[2 + (i*3) + 1];
-						marioColors[p.name].colors[i].b = data[2 + (i*3) + 2];
+						marioSettings[p.name].colors[i].r = data[2 + (i*3) + 0];
+						marioSettings[p.name].colors[i].g = data[2 + (i*3) + 1];
+						marioSettings[p.name].colors[i].b = data[2 + (i*3) + 2];
 					}
 					sendColorsToEveryone(p);
 					break;
 
 				case MarioOpcodes.OPCODE_MARIO_SET_CAP:
+					marioSettings[p.name].cap = (uint)NetUtils.ReadI32(data, 1);
+					sendCapToEveryone(p);
 					break;
 
 				case MarioOpcodes.OPCODE_MARIO_FORCE:
