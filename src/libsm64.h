@@ -29,8 +29,10 @@ struct SM64MarioState
     float position[3];
     float velocity[3];
     float faceAngle;
+    int16_t rawFaceAngle;
     int16_t health;
 	uint32_t action;
+	uint32_t actionArg;
 	uint32_t flags;
 	uint32_t particleFlags;
 	int16_t invincTimer;
@@ -107,6 +109,7 @@ extern SM64_LIB_FN void sm64_mario_anim_tick( int32_t marioId, uint32_t stateFla
 extern SM64_LIB_FN void sm64_mario_delete( int32_t marioId );
 
 extern SM64_LIB_FN void sm64_set_mario_action(int32_t marioId, uint32_t action);
+extern SM64_LIB_FN void sm64_set_mario_action_arg(int32_t marioId, uint32_t action, uint32_t actionArg);
 extern SM64_LIB_FN void sm64_set_mario_state(int32_t marioId, uint32_t flags);
 extern SM64_LIB_FN void sm64_set_mario_position(int32_t marioId, float x, float y, float z);
 extern SM64_LIB_FN void sm64_set_mario_angle(int32_t marioId, int16_t x, int16_t y, int16_t z);
@@ -118,7 +121,6 @@ extern SM64_LIB_FN void sm64_set_mario_floor_override(int32_t marioId, uint16_t 
 extern SM64_LIB_FN void sm64_mario_take_damage(int32_t marioId, uint32_t damage, uint32_t subtype, float x, float y, float z);
 extern SM64_LIB_FN void sm64_mario_heal(int32_t marioId, uint8_t healCounter);
 extern SM64_LIB_FN void sm64_mario_set_health(int32_t marioId, uint16_t health);
-extern SM64_LIB_FN uint16_t sm64_mario_get_health(int32_t marioId);
 extern SM64_LIB_FN void sm64_mario_kill(int32_t marioId);
 extern SM64_LIB_FN void sm64_mario_interact_cap(int32_t marioId, uint32_t capFlag, uint16_t capTime, uint8_t playMusic);
 extern SM64_LIB_FN void sm64_set_mario_pole(int32_t marioId, float x, float y, float z, float height);

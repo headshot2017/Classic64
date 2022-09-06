@@ -186,25 +186,6 @@ void setMarioCap(int i, uint32_t capFlag)
 	}
 }
 
-void sendMarioColors()
-{
-	if (!serverHasPlugin) return;
-
-	cc_uint8 data[64] = {0};
-	data[0] = OPCODE_MARIO_SET_COLORS;
-	data[1] = pluginOptions[PLUGINOPTION_CUSTOM_COLORS].value.on ? 1 : 0;
-	if (pluginOptions[PLUGINOPTION_CUSTOM_COLORS].value.on) // append custom colors
-	{
-		for (int i=0; i<6; i++)
-		{
-			data[2 + (i*3) + 0] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + i].value.col.r;
-			data[2 + (i*3) + 1] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + i].value.col.g;
-			data[2 + (i*3) + 2] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + i].value.col.b;
-		}
-	}
-	CPE_SendPluginMessage(64, data);
-}
-
 void updateMarioColors(int i, bool on, struct RGBCol colors[6])
 {
 	if (!marioInstances[i]) return;
@@ -953,60 +934,63 @@ void marioTick(struct ScheduledTask* task)
 				marioUpdates[i] = NULL;
 			}
 
-			if (i != ENTITIES_SELF_ID) // not you
+			if (i != ENTITIES_SELF_ID)
 			{
 				Vec3 newPos = {Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE};
 				sm64_set_mario_position(obj->ID, newPos.X, newPos.Y, newPos.Z);
 
-				if ((obj->state.action & ACT_GROUP_MASK) == ACT_GROUP_SUBMERGED)
+				if (!serverHasPlugin) // do local prediction on remote players when server does not have the plugin
 				{
-					// in water
-					obj->input.buttonA = (newPos.Z - obj->lastPos.Z) || (newPos.X - obj->lastPos.X);
-					if (obj->input.buttonA)
+					if ((obj->state.action & ACT_GROUP_MASK) == ACT_GROUP_SUBMERGED)
 					{
-						float angle = -atan2(newPos.Z - obj->lastPos.Z, newPos.X - obj->lastPos.X) + (MATH_PI/2);
-						if (angle > MATH_PI) angle -= MATH_PI*2;
-						
-						obj->input.stickX =
-							(angle > obj->state.faceAngle) ? -1 :
-							(angle < obj->state.faceAngle) ? 1 :
+						// in water
+						obj->input.buttonA = (newPos.Z - obj->lastPos.Z) || (newPos.X - obj->lastPos.X);
+						if (obj->input.buttonA)
+						{
+							float angle = -atan2(newPos.Z - obj->lastPos.Z, newPos.X - obj->lastPos.X) + (MATH_PI/2);
+							if (angle > MATH_PI) angle -= MATH_PI*2;
+							
+							obj->input.stickX =
+								(angle > obj->state.faceAngle) ? -1 :
+								(angle < obj->state.faceAngle) ? 1 :
+								0;
+							obj->input.stickY = clamp(newPos.Y - obj->lastPos.Y, -1, 1);
+						}
+						else
+							obj->input.stickX = obj->input.stickY = 0;
+					}
+					else if (obj->state.action & ACT_FLAG_ON_POLE)
+					{
+						// climbing rope
+						float xdist = fabs(sm64_get_mario_pole_x(obj->ID) - newPos.X);
+						float zdist = fabs(sm64_get_mario_pole_z(obj->ID) - newPos.Z);
+
+						obj->input.buttonA = (xdist || zdist);
+						obj->input.stickX = 0;
+						obj->input.stickY = (obj->input.buttonA) ? 0 :
+							(newPos.Y - obj->lastPos.Y > 0) ? 1 :
+							(newPos.Y - obj->lastPos.Y < 0) ? -1 :
 							0;
-						obj->input.stickY = clamp(newPos.Y - obj->lastPos.Y, -1, 1);
 					}
 					else
-						obj->input.stickX = obj->input.stickY = 0;
-				}
-				else if (obj->state.action & ACT_FLAG_ON_POLE)
-				{
-					// climbing rope
-					float xdist = fabs(sm64_get_mario_pole_x(obj->ID) - newPos.X);
-					float zdist = fabs(sm64_get_mario_pole_z(obj->ID) - newPos.Z);
-
-					obj->input.buttonA = (xdist || zdist);
-					obj->input.stickX = 0;
-					obj->input.stickY = (obj->input.buttonA) ? 0 :
-						(newPos.Y - obj->lastPos.Y > 0) ? 1 :
-						(newPos.Y - obj->lastPos.Y < 0) ? -1 :
-						0;
-				}
-				else
-				{
-					obj->input.buttonA = (newPos.Y - obj->lastPos.Y > 0);
-
-					bool moved = (newPos.Z - obj->lastPos.Z) || (newPos.X - obj->lastPos.X);
-					if (moved)
 					{
-						float dir = atan2(newPos.Z - obj->lastPos.Z, newPos.X - obj->lastPos.X);
-						obj->input.stickX = -Math_Cos(dir);
-						obj->input.stickY = -Math_Sin(dir);
+						obj->input.buttonA = (newPos.Y - obj->lastPos.Y > 0);
+
+						bool moved = (newPos.Z - obj->lastPos.Z) || (newPos.X - obj->lastPos.X);
+						if (moved)
+						{
+							float dir = atan2(newPos.Z - obj->lastPos.Z, newPos.X - obj->lastPos.X);
+							obj->input.stickX = -Math_Cos(dir);
+							obj->input.stickY = -Math_Sin(dir);
+						}
+						else
+							obj->input.stickX = obj->input.stickY = 0;
 					}
-					else
-						obj->input.stickX = obj->input.stickY = 0;
 				}
 
 				obj->lastPos = newPos;
 			}
-			else
+			else if (i == ENTITIES_SELF_ID) // you
 			{
 				marioInterpTicks = 0;
 				obj->lastPos.X = obj->state.position[0]; obj->lastPos.Y = obj->state.position[1]; obj->lastPos.Z = obj->state.position[2];
@@ -1018,9 +1002,9 @@ void marioTick(struct ScheduledTask* task)
 						obj->lastTexturedGeom[j] = obj->currTexturedGeom[j];
 					}
 				}
-			}
 
-			if (!pluginOptions[PLUGINOPTION_HURT].value.on && sm64_mario_get_health(obj->ID) != 0xff) sm64_mario_set_health(obj->ID, 0x880);
+				if (!pluginOptions[PLUGINOPTION_HURT].value.on && obj->state.health != 0xff) sm64_mario_set_health(obj->ID, 0x880);
+			}
 
 			// water
 			int yadd = 0;
@@ -1036,6 +1020,7 @@ void marioTick(struct ScheduledTask* task)
 			obj->currPos.X = obj->state.position[0];
 			obj->currPos.Y = obj->state.position[1];
 			obj->currPos.Z = obj->state.position[2];
+			if (i == ENTITIES_SELF_ID) sendMarioTick();
 
 			obj->numTexturedTriangles = 0;
 			bool bgr = (pluginOptions[PLUGINOPTION_BGR].value.on);

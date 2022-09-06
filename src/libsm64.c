@@ -334,8 +334,10 @@ SM64_LIB_FN void sm64_mario_tick( int32_t marioId, const struct SM64MarioInputs 
     outState->health = gMarioState->health;
     vec3f_copy( outState->position, gMarioState->pos );
     vec3f_copy( outState->velocity, gMarioState->vel );
+    outState->rawFaceAngle = gMarioState->faceAngle[1];
     outState->faceAngle = (float)gMarioState->faceAngle[1] / 32768.0f * 3.14159f;
 	outState->action = gMarioState->action;
+	outState->actionArg = gMarioState->actionArg;
 	outState->flags = gMarioState->flags;
 	outState->particleFlags = gMarioState->particleFlags;
 	outState->invincTimer = gMarioState->invincTimer;
@@ -414,6 +416,14 @@ SM64_LIB_FN void sm64_set_mario_action(int32_t marioId, uint32_t action)
     global_state_bind( globalState );
 	
 	set_mario_action( gMarioState, action, 0);
+}
+
+SM64_LIB_FN void sm64_set_mario_action_arg(int32_t marioId, uint32_t action, uint32_t actionArg)
+{
+	struct GlobalState *globalState = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
+    global_state_bind( globalState );
+	
+	set_mario_action( gMarioState, action, actionArg);
 }
 
 SM64_LIB_FN void sm64_set_mario_state(int32_t marioId, uint32_t flags)
