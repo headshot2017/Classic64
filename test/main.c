@@ -397,7 +397,7 @@ int main( void )
     sm64_global_terminate();
     sm64_global_init( rom, texture, NULL );
     sm64_static_surfaces_load( surfaces, surfaces_count );
-    uint32_t marioId = sm64_mario_create( spawn[0], spawn[1], spawn[2], 0, 0, 0, 0 );
+    uint32_t marioId = sm64_mario_create( spawn[0], spawn[1], spawn[2], 0, 0, 0, 0, true );
 
     free( rom );
 

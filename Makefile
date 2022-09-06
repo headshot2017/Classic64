@@ -59,9 +59,9 @@ test/main.c: test/level.h
 $(BUILD_DIR)/test/%.o: test/%.c
 	@$(CC) $(CFLAGS) -MM -MP -MT $@ -MF $(BUILD_DIR)/test/$*.d $<
 ifeq ($(OS),Windows_NT)
-	$(CC) -c $(CFLAGS) -I/mingw64/include/SDL2 -I/mingw64/include/GL -o $@ $<
+	$(CC) -c $(CFLAGS) -isystem src/decomp/include -I/mingw64/include/SDL2 -I/mingw64/include/GL -o $@ $<
 else
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) -isystem src/decomp/include -o $@ $<
 endif
 
 $(TEST_FILE): $(LIB_FILE) $(TEST_OBJS)
@@ -86,6 +86,6 @@ run: test
 	./$(TEST_FILE)
 
 clean:
-	rm -rf $(BUILD_DIR) $(DIST_DIR) test/level.? $(TEST_FILE)
+	rm -rf $(BUILD_DIR) $(DIST_DIR) $(TEST_FILE)
 
 -include $(DEP_FILES)
