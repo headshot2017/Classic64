@@ -8,6 +8,8 @@ ENDFLAGS := -fPIC
 ifeq ($(OS),Windows_NT)
 LDFLAGS := $(LDFLAGS) -mwindows
 ENDFLAGS := -static src/ClassiCube/libClassiCube.a -lole32 -lstdc++
+else
+ENDFLAGS := -lasound -lpulse -lSDL2
 endif
 
 SRC_DIRS  := src src/decomp src/decomp/engine src/decomp/include/PR src/decomp/game src/decomp/pc src/decomp/pc/audio src/decomp/mario src/decomp/tools src/decomp/audio src/sha1

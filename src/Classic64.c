@@ -863,6 +863,7 @@ void marioTick(struct ScheduledTask* task)
 			else
 			{
 				// mario was spawned, intialize the instance struct and put everything in there
+				printf("create mario %d at %.2f %.2f %.2f (%.2f %.2f %.2f)\n", i, Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, Entities_->List[i]->Position.X, Entities_->List[i]->Position.Y, Entities_->List[i]->Position.Z);
 				sm64_set_mario_faceangle(ID, (int16_t)((-Entities_->List[i]->Yaw + 180) / 180 * 32768.0f));
 				marioInstances[i] = (struct MarioInstance*)malloc(sizeof(struct MarioInstance));
 				marioInstances[i]->ID = ID;
@@ -1434,6 +1435,7 @@ EXPORT struct IGameComponent Plugin_Component = {
 #define LoadSymbol(name) name ## _ = GetProcAddress(app, QUOTE(name))
 #else
 #define _GNU_SOURCE
+#define __USE_GNU
 #include <dlfcn.h>
 #define LoadSymbol(name) name ## _ = dlsym(RTLD_DEFAULT, QUOTE(name))
 #endif
