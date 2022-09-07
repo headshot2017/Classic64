@@ -113,7 +113,7 @@ SM64_LIB_FN void sm64_global_init( uint8_t *rom, uint8_t *outTexture, SM64DebugP
 	
 	DEBUG_PRINT("ADSR: %p, raw: %p, bs: %p, seq: %p", gSoundDataADSR, gSoundDataRaw, gBankSetsData, gMusicData);
 	
-	initMarioGeo(rom);
+	//initMarioGeo(rom);
 	
     if( s_init_global )
         sm64_global_terminate();
