@@ -21,6 +21,7 @@ LIB_FILE   := $(DIST_DIR)/libClassic64.so
 LIB_H_FILE := $(DIST_DIR)/include/libsm64.h
 TEST_FILE  := run-test
 
+C_IMPORTED := src/decomp/mario/geo.inc.c src/decomp/mario/model.inc.c
 H_IMPORTED := $(C_IMPORTED:.c=.h)
 IMPORTED   := $(C_IMPORTED) $(H_IMPORTED)
 
@@ -39,6 +40,10 @@ endif
 
 DUMMY != mkdir -p $(ALL_DIRS) build/test src/decomp/mario $(DIST_DIR)/include 
 
+
+$(filter-out src/decomp/mario/geo.inc.c,$(IMPORTED)): src/decomp/mario/geo.inc.c
+src/decomp/mario/geo.inc.c: ./import-mario-geo.py
+	./import-mario-geo.py
 
 $(BUILD_DIR)/%.o: %.c $(IMPORTED)
 	@$(CC) $(CFLAGS) -MM -MP -MT $@ -MF $(BUILD_DIR)/$*.d $<
