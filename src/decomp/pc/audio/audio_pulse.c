@@ -1,6 +1,6 @@
 #include "../compat.h"
 
-#if defined(__linux__) || defined(__BSD__)
+#if (defined(__linux__) || defined(__BSD__)) && defined(USE_PULSEAUDIO)
 
 #include <stdio.h>
 #include <stdbool.h>

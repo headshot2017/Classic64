@@ -10,11 +10,33 @@ This project was not created by, or is related with the developers of the Minecr
 [ClassiCube](https://github.com/UnknownShadow200/ClassiCube) is a custom Minecraft Classic client written in C.
 
 ## Compiling the plugin
-Download the [MSYS2](https://msys2.org/#installation) development environment, launch MSYS2 MinGW x64 and install gcc, g++ and make.
+### Windows
+Download the [MSYS2](https://msys2.org/#installation) development environment, launch MSYS2 MinGW x64 and install gcc and make with `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-make`.
 Finally, run `make`.
 
 A folder named "dist" will be created and inside will sit the plugin dll file "Classic64.dll".
 Copy this to your ClassiCube plugins folder.
+
+### Linux
+Install gcc, g++ and make using your package manager:
+```
+# For Ubuntu and derivatives like Linux Mint and Pop!_OS:
+sudo apt install gcc g++ make
+
+# For Arch Linux and derivatives like Manjaro:
+sudo pacman -S gcc make
+```
+
+By default, the makefile will compile with ALSA and PulseAudio for providing sound, so you must install these dependencies as well:
+```
+# For Ubuntu and derivatives like Linux Mint and Pop!_OS:
+sudo apt install libasound2-dev libpulse-dev
+
+# For Arch Linux and derivatives like Manjaro:
+sudo pacman -S alsa-lib libpulse
+```
+
+SDL2 is also supported as sound output but disabled by default. You can enable it by editing the makefile and adding `-DUSE_SDL2` and linking against `-lSDL2`.
 
 ## Running the plugin
 **You are required to supply a dumped copy of your Super Mario 64 US ROM, placed inside the plugins folder, with the filename "sm64.us.z64".
@@ -25,7 +47,8 @@ This plugin only works on 64-bit systems, Windows and Linux. macOS has not been 
 ## How to play
 To turn into Mario, run the command `/model mario64`. This will let everyone on the server using this plugin know that you're playing as Mario, and will display the model on their end.
 
-If you are on a server with hacks enabled (flying, speed, etc) but the "/model" command is not allowed, you can run the client-side command `/client mario64 force`, at the cost that nobody will see your Mario model.
+If you are on a server with hacks enabled (flying, speed, etc) but the "/model" command is not allowed, you can run the client-side command `/client mario64 force`.
+If the server is running the Classic64 MCGalaxy plugin, everyone will see the client-side change as well.
 
 ## Running client-side commands with MessageBlocks or Bots
 If you're making a map intended for Mario, you can alter certain aspects of the plugin through your map by using MessageBlocks, or Bots! (Only on MCGalaxy servers)
@@ -33,7 +56,7 @@ If you're making a map intended for Mario, you can alter certain aspects of the 
 The format is `&0!mario64`, followed by one of the client-side commands listed below.
 
 Examples:<br/>
-If you want to play music ID 27 (Correct Solution) when breaking a white wool block: `/mb white &0!mario64 music 7`<br/>
+If you want to play music ID 27 (Correct Solution) when breaking a white wool block: `/mb white &0!mario64 music 27`<br/>
 If you want to instantly kill Mario when a bot kills the player: `/bot deathmessage <bot-name> &0!mario64 kill`
 
 ## Client-side commands
