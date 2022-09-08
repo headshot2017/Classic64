@@ -20,12 +20,7 @@ Copy this to your ClassiCube plugins folder.
 **You are required to supply a dumped copy of your Super Mario 64 US ROM, placed inside the plugins folder, with the filename "sm64.us.z64".
 Otherwise the plugin will refuse to work.**
 
-At the moment this only works on 64-bit Windows due to certain quirks with libsm64.
-The [original libsm64](https://github.com/libsm64/libsm64) (and [dylanpdx's fork](https://github.com/dylanpdx/libsm64)) only works on 64-bit systems, including Linux (haven't tested macOS but it should be the same result).
-
-However, ckosmic's audio fork only works on 64-bit Windows.
-
-Until a solution comes up for both of these issues, this plugin can only be used on 64-bit Windows systems. If you're on macOS/Linux, use Wine for the time being.
+This plugin only works on 64-bit systems, Windows and Linux. macOS has not been tested.
 
 ## How to play
 To turn into Mario, run the command `/model mario64`. This will let everyone on the server using this plugin know that you're playing as Mario, and will display the model on their end.
