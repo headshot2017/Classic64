@@ -103,6 +103,7 @@ struct MarioUpdate *marioUpdates[256];
 
 bool inited;
 bool allowTick; // false when loading world
+int waitBeforeInterp;
 float marioInterpTicks;
 bool serverHasPlugin;
 bool checkedForPlugin;
@@ -887,6 +888,7 @@ void marioTick(struct ScheduledTask* task)
 
 				if (i == ENTITIES_SELF_ID)
 				{
+					waitBeforeInterp = 30;
 					struct RGBCol newColors[6];
 					for (int j=0; j<6; j++) newColors[j] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + j].value.col;
 					updateMarioColors(ENTITIES_SELF_ID, pluginOptions[PLUGINOPTION_CUSTOM_COLORS].value.on, newColors);
@@ -1124,7 +1126,7 @@ void selfMarioTick(struct ScheduledTask* task)
 	if (!marioInstances[ENTITIES_SELF_ID]) return;
 	struct MarioInstance *obj = marioInstances[ENTITIES_SELF_ID];
 
-	if (pluginOptions[PLUGINOPTION_INTERP].value.on)
+	if (pluginOptions[PLUGINOPTION_INTERP].value.on && waitBeforeInterp <= 0)
 	{
 		// interpolate position and mesh
 		obj->state.position[0] = obj->lastPos.X + ((obj->currPos.X - obj->lastPos.X) * (marioInterpTicks / (1.f/30)));
@@ -1159,6 +1161,7 @@ void selfMarioTick(struct ScheduledTask* task)
 	}
 	else
 	{
+		if (waitBeforeInterp > 0) waitBeforeInterp--;
 		obj->state.position[0] = obj->currPos.X;
 		obj->state.position[1] = obj->currPos.Y;
 		obj->state.position[2] = obj->currPos.Z;
@@ -1317,6 +1320,7 @@ static void Classic64_Init()
 	inited = true;
 	allowTick = false;
 	marioInterpTicks = 0;
+	waitBeforeInterp = 0;
 	serverHasPlugin = false;
 	checkedForPlugin = false;
 
