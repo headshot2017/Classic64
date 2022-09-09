@@ -3,7 +3,7 @@
 
 #define MARIO_SCALE 128.f
 #define IMARIO_SCALE 128
-#define DEBUGGER_MAX_VERTICES 4096
+#define DEBUGGER_MAX_VERTICES 8192
 
 #include <inttypes.h>
 
