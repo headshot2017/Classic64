@@ -633,6 +633,7 @@ static void geo_process_animated_part(struct GraphNodeAnimatedPart *node) {
  */
 void geo_set_animation_globals(struct AnimInfo *node, s32 hasAnimation) {
     struct Animation *anim = node->curAnim;
+    if (!anim) return; // Classic64: fix crash when mario spawns right after loading a map
 
     if (hasAnimation) {
         node->animFrame = geo_update_animation_frame(node, &node->animFrameAccelAssist);
