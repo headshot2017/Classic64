@@ -3,6 +3,7 @@
 
 #define MARIO_SCALE 128.f
 #define IMARIO_SCALE 128
+#define MAX_SURFACES 128
 #define DEBUGGER_MAX_VERTICES 8192
 
 #include <inttypes.h>
@@ -44,7 +45,7 @@ extern struct Bitmap marioBitmap;
 struct MarioInstance // represents a Mario object in the plugin
 {
 	int32_t ID;
-	uint32_t surfaces[128];
+	uint32_t surfaces[MAX_SURFACES];
 	const struct EntityVTABLE* OriginalVTABLE;
 	struct EntityVTABLE marioVTABLE;
 	bool customColors;

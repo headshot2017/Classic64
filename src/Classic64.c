@@ -510,7 +510,7 @@ static struct ChatCommand MarioClientCmd = {
 // mario functions
 void deleteBlocks(uint32_t *arrayTarget) // specify arrayTarget because the blocks need to be created before mario can be spawned
 {
-	for (int j=0; j<128; j++)
+	for (int j=0; j<MAX_SURFACES; j++)
 	{
 		if (arrayTarget[j] == -1) continue;
 		sm64_surface_object_delete(arrayTarget[j]);
@@ -552,6 +552,7 @@ void deleteMario(int i)
 
 bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget, bool* moreBelow)
 {
+	if ((*i) >= MAX_SURFACES) return false;
 	BlockID block = World_SafeGetBlock(x, y, z);
 	if (!isBlockSolid(block)) return false;
 
@@ -715,17 +716,17 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 		{
 			if (x+xadd < 0 || x+xadd >= World_->Width || z+zadd < 0 || z+zadd >= World_->Length) continue;
 
-			for (yadd=2; yadd>=0; yadd--)
-			{
-				if (y+yadd < World_->Height)
-					addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget, NULL);
-			}
-
 			// get block at floor
 			for (yadd=-1; y+yadd>=-1; yadd--)
 			{
 				bool moreBelow = false;
 				if (addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget, &moreBelow) && !moreBelow) break;
+			}
+
+			for (yadd=2; yadd>=0; yadd--)
+			{
+				if (y+yadd < World_->Height)
+					addBlock(x+xadd, y+yadd, z+zadd, &arrayInd, arrayTarget, NULL);
 			}
 
 			// rope interaction
@@ -853,7 +854,7 @@ void marioTick(struct ScheduledTask* task)
 		if (!marioInstances[i] && strcmp(Entities_->List[i]->Model->name, "mario64") == 0)
 		{
 			// spawn mario. have some temporary variables for the surface IDs and mario ID
-			uint32_t surfaces[128];
+			uint32_t surfaces[MAX_SURFACES];
 			memset(surfaces, -1, sizeof(surfaces));
 			loadNewBlocks(i, Entities_->List[i]->Position.X, Entities_->List[i]->Position.Y, Entities_->List[i]->Position.Z, surfaces);
 			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, 0,0,0,0, (i == ENTITIES_SELF_ID));
