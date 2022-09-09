@@ -1006,8 +1006,10 @@ void marioTick(struct ScheduledTask* task)
 					}
 				}
 
-				if (!pluginOptions[PLUGINOPTION_HURT].value.on && obj->state.health != 0xff) sm64_mario_set_health(obj->ID, 0x880);
 			}
+
+			if ((i != ENTITIES_SELF_ID && !serverHasPlugin) || (i == ENTITIES_SELF_ID && !pluginOptions[PLUGINOPTION_HURT].value.on && obj->state.health != 0xff))
+				sm64_mario_set_health(obj->ID, 0x880);
 
 			// water
 			int yadd = 0;
