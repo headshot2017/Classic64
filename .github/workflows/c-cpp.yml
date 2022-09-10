@@ -12,15 +12,31 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: make
-      run: make
+      - uses: actions/checkout@v3
+      - name: Run make
+        run: make
+      
+      - name: Use the Upload Artifact GitHub Action
+        uses: actions/upload-artifact@v2
+        with:
+          name: classic64-windows
+          path: dist
 
   build-ubuntu:
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: make
-      run: make
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies libasound2-dev libpulse-dev
+        run: sudo apt-get install -y libasound2-dev libpulse-dev
+
+      - name: Run make
+        run: make
+      
+      - name: Use the Upload Artifact GitHub Action
+        uses: actions/upload-artifact@v2
+        with:
+          name: classic64-ubuntu
+          path: dist
