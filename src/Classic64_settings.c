@@ -95,6 +95,11 @@ struct PluginOption pluginOptions[] = {
 		1, PLUGINOPTION_VALUE_STRING, {.str={"lshift", keyNames, 122}}, false
 	},
 	{
+		String_FromConst("key_attack"),
+		{String_FromConst("&eChange Mario's attack/dive key (B button).")},
+		1, PLUGINOPTION_VALUE_STRING, {.str={"lmouse", keyNames, 122}}, false
+	},
+	{
 		String_FromConst("custom_colors"),
 		{String_FromConst("&eWhether to use custom Mario colors.")},
 		1, PLUGINOPTION_VALUE_BOOL, {.on=true}, false

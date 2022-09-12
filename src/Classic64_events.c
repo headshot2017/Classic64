@@ -33,9 +33,12 @@ void OnKeyDown(void* obj, int key, cc_bool repeating)
 {
 	if (repeating || isGuiOpen()) return;
 
-	if (marioInstances[ENTITIES_SELF_ID] && strcmp(pluginOptions[PLUGINOPTION_KEY_CROUCH].value.str.current, keyNames[key]) == 0)
+	if (marioInstances[ENTITIES_SELF_ID])
 	{
-		marioInstances[ENTITIES_SELF_ID]->input.buttonZ = true;
+		if (strcmp(pluginOptions[PLUGINOPTION_KEY_CROUCH].value.str.current, keyNames[key]) == 0)
+			marioInstances[ENTITIES_SELF_ID]->input.buttonZ = true;
+		else if (strcmp(pluginOptions[PLUGINOPTION_KEY_ATTACK].value.str.current, keyNames[key]) == 0)
+			marioInstances[ENTITIES_SELF_ID]->input.buttonB = true;
 	}
 }
 
@@ -43,9 +46,12 @@ void OnKeyUp(void* obj, int key)
 {
 	if (isGuiOpen()) return;
 
-	if (marioInstances[ENTITIES_SELF_ID] && strcmp(pluginOptions[PLUGINOPTION_KEY_CROUCH].value.str.current, keyNames[key]) == 0)
+	if (marioInstances[ENTITIES_SELF_ID])
 	{
-		marioInstances[ENTITIES_SELF_ID]->input.buttonZ = false;
+		if (strcmp(pluginOptions[PLUGINOPTION_KEY_CROUCH].value.str.current, keyNames[key]) == 0)
+			marioInstances[ENTITIES_SELF_ID]->input.buttonZ = false;
+		else if (strcmp(pluginOptions[PLUGINOPTION_KEY_ATTACK].value.str.current, keyNames[key]) == 0)
+			marioInstances[ENTITIES_SELF_ID]->input.buttonB = false;
 	}
 }
 

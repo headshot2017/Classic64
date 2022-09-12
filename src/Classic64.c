@@ -419,6 +419,9 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 
 					case PLUGINOPTION_VALUE_STRING:
 						{
+							char value[256] = {0};
+							strncpy(value, args[2].buffer, args[2].length); // if you type key name 'lshift ' (with the space at the end) then 'lshift', it does not recognize the value. fixed
+
 							if (pluginOptions[i].value.str.validList)
 							{
 								// user must pick a value from a list
@@ -426,7 +429,7 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 								bool found = false;
 								for (int j=0; j<pluginOptions[i].value.str.validMax && !found; j++)
 								{
-									if (strcmp(args[2].buffer, pluginOptions[i].value.str.validList[j]) == 0)
+									if (strcmp(value, pluginOptions[i].value.str.validList[j]) == 0)
 										found = true;
 								}
 
@@ -460,7 +463,7 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 								}
 							}
 
-							strcpy(pluginOptions[i].value.str.current, args[2].buffer);
+							strcpy(pluginOptions[i].value.str.current, value);
 							SendChat("&a%s: %s", &pluginOptions[i].name, &args[2], NULL, NULL);
 						}
 						break;
@@ -1255,8 +1258,7 @@ void selfMarioTick(struct ScheduledTask* task)
 	}
 
 	obj->input.buttonA = KeyBind_IsPressed(KEYBIND_JUMP);
-	obj->input.buttonB = KeyBind_IsPressed(KEYBIND_DELETE_BLOCK);
-	// Z button is managed in Classic64_events.c
+	// Z and B buttons are managed in Classic64_events.c
 	/*
 	Entities_->List[ENTITIES_SELF_ID]->Position.X = marioState.position[0];
 	Entities_->List[ENTITIES_SELF_ID]->Position.Y = marioState.position[1];
