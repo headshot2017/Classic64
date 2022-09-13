@@ -55,10 +55,12 @@ src/decomp/mario/geo.inc.c: ./import-mario-geo.py
 	./import-mario-geo.py
 
 $(BUILD_DIR)/%.o: %.c $(IMPORTED)
+	@mkdir -p $(@D)
 	@$(CC) $(CFLAGS) -MM -MP -MT $@ -MF $(BUILD_DIR)/$*.d $<
 	$(CC) -c $(CFLAGS) -isystem src/decomp/include -o $@ $<
 
 $(BUILD_DIR)/%.o: %.cpp $(IMPORTED)
+	@mkdir -p $(@D)
 	@$(CXX) $(CFLAGS) -MM -MP -MT $@ -MF $(BUILD_DIR)/$*.d $<
 	$(CXX) -c $(CFLAGS) -isystem src/decomp/include -o $@ $<
 
