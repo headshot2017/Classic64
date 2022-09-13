@@ -16,7 +16,7 @@ ENDFLAGS := -static src/ClassiCube/libClassiCube.a -lole32 -lstdc++
 
 else ifeq ($(shell uname -s),Darwin)
 LIB_FILE := $(DIST_DIR)/libClassic64.dylib
-CFLAGS   := $(CFLAGS) -DUSE_SDL2
+CFLAGS   := $(CFLAGS) -Isrc/decomp/include -DUSE_SDL2
 ENDFLAGS := -undefined dynamic_lookup -lSDL2
 
 else
