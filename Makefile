@@ -5,12 +5,15 @@ CXX 	:= g++
 CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
 LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC
+LIB_FILE := $(DIST_DIR)/libClassic64.so
 
 ifeq ($(OS),Windows_NT)
+LIB_FILE := $(DIST_DIR)/Classic64.dll
 LDFLAGS := $(LDFLAGS) -mwindows
 ENDFLAGS := -static src/ClassiCube/libClassiCube.a -lole32 -lstdc++
 
 else ifeq ($(shell uname -s),Darwin)
+LIB_FILE := $(DIST_DIR)/libClassic64.dylib
 CFLAGS   := $(CFLAGS) -DUSE_SDL2
 ENDFLAGS := -undefined dynamic_lookup -lSDL2
 
@@ -24,7 +27,6 @@ BUILD_DIR := build
 DIST_DIR  := dist
 ALL_DIRS  := $(addprefix $(BUILD_DIR)/,$(SRC_DIRS))
 
-LIB_FILE   := $(DIST_DIR)/libClassic64.so
 LIB_H_FILE := $(DIST_DIR)/include/libsm64.h
 TEST_FILE  := run-test
 
@@ -42,7 +44,6 @@ TEST_OBJS := $(foreach file,$(TEST_SRCS),$(BUILD_DIR)/$(file:.c=.o))
 
 ifeq ($(OS),Windows_NT)
   TEST_FILE := $(DIST_DIR)/$(TEST_FILE)
-  LIB_FILE := $(DIST_DIR)/Classic64.dll
 endif
 
 DUMMY != mkdir -p $(ALL_DIRS) build/test src/decomp/mario $(DIST_DIR)/include 
