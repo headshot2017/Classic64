@@ -41,6 +41,7 @@
 #include "decomp/pc/audio/audio_wasapi.h"
 #include "decomp/pc/audio/audio_pulse.h"
 #include "decomp/pc/audio/audio_alsa.h"
+#include "decomp/pc/audio/audio_sdl.h"
 #include "decomp/audio/external.h"
 #include "decomp/audio/load_dat.h"
 #include "decomp/tools/convTypes.h"
@@ -141,7 +142,7 @@ SM64_LIB_FN void sm64_global_init( uint8_t *rom, uint8_t *outTexture, SM64DebugP
 		DEBUG_PRINT("Audio API: Alsa");
 	}
 	#endif
-	#ifdef TARGET_WEB
+	#if defined(TARGET_WEB) || defined(USE_SDL2)
 	if (audio_api == NULL && audio_sdl.init()) {
 		audio_api = &audio_sdl;
 		DEBUG_PRINT("Audio API: SDL");

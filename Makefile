@@ -5,9 +5,15 @@ CXX 	:= g++
 CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
 LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC
+
 ifeq ($(OS),Windows_NT)
 LDFLAGS := $(LDFLAGS) -mwindows
 ENDFLAGS := -static src/ClassiCube/libClassiCube.a -lole32 -lstdc++
+
+else ifeq ($(shell uname -s),Darwin)
+CFLAGS   := $(CFLAGS) -DUSE_SDL2
+ENDFLAGS := -undefined dynamic_lookup -lSDL2
+
 else
 CFLAGS   := $(CFLAGS) -DUSE_ALSA -DUSE_PULSEAUDIO
 ENDFLAGS := -lasound -lpulse
