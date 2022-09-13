@@ -40,19 +40,3 @@ jobs:
         with:
           name: classic64-linux
           path: dist
-
-  build-macOS:
-
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Run make
-        run: make
-      
-      - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v2
-        with:
-          name: classic64-macOS
-          path: dist
