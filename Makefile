@@ -5,6 +5,8 @@ CXX 	:= g++
 CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
 LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC
+
+DIST_DIR  := dist
 LIB_FILE := $(DIST_DIR)/libClassic64.so
 
 ifeq ($(OS),Windows_NT)
@@ -24,7 +26,6 @@ endif
 
 SRC_DIRS  := src src/decomp src/decomp/engine src/decomp/include/PR src/decomp/game src/decomp/pc src/decomp/pc/audio src/decomp/mario src/decomp/tools src/decomp/audio src/sha1
 BUILD_DIR := build
-DIST_DIR  := dist
 ALL_DIRS  := $(addprefix $(BUILD_DIR)/,$(SRC_DIRS))
 
 LIB_H_FILE := $(DIST_DIR)/include/libsm64.h
