@@ -259,7 +259,7 @@ SM64_LIB_FN struct SM64AnimInfo* sm64_mario_get_anim_info( int32_t marioId, int1
 	if( marioId >= s_mario_instance_pool.size || s_mario_instance_pool.objects[marioId] == NULL )
     {
         DEBUG_PRINT("Tried to tick non-existant Mario with ID: %u", marioId);
-        return;
+        return NULL;
     }
 
 	struct GlobalState *state = ((struct MarioInstance *)s_mario_instance_pool.objects[ marioId ])->globalState;
