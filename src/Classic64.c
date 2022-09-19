@@ -152,7 +152,7 @@ static void marioModel_GetTransform(struct Entity* entity, Vec3 pos, struct Matr
 static struct ModelTex unused_tex = { "char.png" }; // without this, the game crashes in first person view with nothing held in hand
 static void marioModel_DrawArm(struct Entity* entity) {}
 static void marioModel_MakeParts(void) {}
-static float marioModel_GetNameY(struct Entity* e) { return 1+0.25f; }
+static float marioModel_GetNameY(struct Entity* e) { return (1+0.25f) * e->ModelScale.Y; }
 static float marioModel_GetEyeY(struct Entity* e)  { return 1; }
 static void marioModel_GetSize(struct Entity* e) {e->Size = (Vec3) { 0.5f, 1, 0.5f };}
 static void marioModel_GetBounds(struct Entity* e) {AABB_Make(&e->ModelAABB, &e->Position, &e->Size);}
