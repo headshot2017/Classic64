@@ -1422,6 +1422,12 @@ static void Classic64_OnNewMapLoaded()
 		data[0] = OPCODE_MARIO_HAS_PLUGIN;
 		CPE_SendPluginMessage(64, data);
 	}
+
+	struct SM64Surface surfaces[2] = {
+		{SURFACE_DEFAULT, 0, TERRAIN_STONE, {{World_->Width*IMARIO_SCALE, 0, World_->Length*IMARIO_SCALE}, {0, 0, 0}, {0, 0, World_->Length*IMARIO_SCALE}}},
+		{SURFACE_DEFAULT, 0, TERRAIN_STONE, {{0, 0, 0}, {World_->Width*IMARIO_SCALE, 0, World_->Length*IMARIO_SCALE}, {0, IMARIO_SCALE, 0}}}
+	};
+	sm64_static_surfaces_load(surfaces, 2);
 }
 
 EXPORT int Plugin_ApiVersion = 1;
