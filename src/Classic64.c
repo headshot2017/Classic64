@@ -15,6 +15,7 @@
 #include "libsm64.h"
 #include "decomp/include/sm64.h"
 #include "decomp/include/surface_terrains.h"
+#include "decomp/include/seq_ids.h"
 #include "sha1/sha1.h"
 
 #include "Classic64_events.h"
@@ -220,21 +221,25 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 	{
 		if (argsCount < 2)
 		{
-			SendChat("&a/client mario64 music <id 0-33>", NULL, NULL, NULL, NULL);
+			SendChat("&a/client mario64 music <id 0-33> [variation on/off]", NULL, NULL, NULL, NULL);
 			SendChat("&ePlay music from Super Mario 64.", NULL, NULL, NULL, NULL);
 			SendChat("&eTo stop music, use music ID 0.", NULL, NULL, NULL, NULL);
+			SendChat("&e'variation' will play variation of music if available.", NULL, NULL, NULL, NULL);
 			return;
 		}
 
 		cc_uint8 music;
-		if (!Convert_ParseUInt8(&args[1], &music) || music >= 0x22)
+		cc_uint8 variation = 0;
+		if (!Convert_ParseUInt8(&args[1], &music) || music >= SEQ_COUNT)
 		{
 			SendChat("&cInvalid music ID", NULL, NULL, NULL, NULL);
 			return;
 		}
+		if (argsCount > 2 && !String_Compare(&args[2], &on) && (music == SEQ_MENU_TITLE_SCREEN || music == SEQ_LEVEL_WATER))
+			variation = SEQ_VARIATION;
 
-		for (int i=0; i<0x22; i++) sm64_stop_background_music(i);
-		if (music != 0) sm64_play_music(0, ((0 << 8) | music), 0);
+		for (int i=0; i<SEQ_COUNT; i++) sm64_stop_background_music(i);
+		if (music != 0) sm64_play_music(0, ((0 << 8) | music | variation), 0);
 		return;
 	}
 	else if (String_Compare(&args[0], &options[1]) == 0) // set mario cap setting
