@@ -21,7 +21,7 @@ jobs:
 
       - name: Install dependencies
         shell: msys2 {0}
-        run: pacman --noconfirm -S mingw-w64-i686-SDL2 mingw-w64-i686-gcc make
+        run: pacman --noconfirm -S mingw-w64-i686-SDL2 mingw-w64-i686-gcc make python3
 
       - name: Run make
         shell: msys2 {0}
