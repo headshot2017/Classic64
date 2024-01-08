@@ -95,7 +95,7 @@ jobs:
         run: make
       
       - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: classic64-linux-x86
           path: dist
