@@ -2,7 +2,7 @@ default: debug
 
 CC      := gcc
 CXX 	:= g++
-CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
+CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS -D_WIN32_WINNT=0x0501
 LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC
 
@@ -12,19 +12,16 @@ LIB_FILE := $(DIST_DIR)/libClassic64.so
 ifeq ($(OS),Windows_NT)
 LIB_FILE := $(DIST_DIR)/Classic64.dll
 LDFLAGS := $(LDFLAGS) -mwindows
-ENDFLAGS := -static src/ClassiCube/libClassiCube.a -lole32 -lstdc++
+ENDFLAGS := $(ENDFLAGS) -static -Lsrc/ClassiCube/x86 -Lsrc/ClassiCube/x64 -lClassiCube -lSDL2 -lole32 -lwinmm -loleaut32 -limm32 -lversion -lsetupapi
 
 else ifeq ($(shell uname -s),Darwin)
 LIB_FILE := $(DIST_DIR)/libClassic64.dylib
-CFLAGS   := $(CFLAGS) -Isrc/decomp/include -DUSE_SDL2
-ENDFLAGS := -undefined dynamic_lookup -lSDL2
+CFLAGS   := $(CFLAGS) -Isrc/decomp/include
+ENDFLAGS := -undefined dynamic_lookup
 
-else
-CFLAGS   := $(CFLAGS) -DUSE_ALSA -DUSE_PULSEAUDIO
-ENDFLAGS := -lasound -lpulse
 endif
 
-SRC_DIRS  := src src/decomp src/decomp/engine src/decomp/include/PR src/decomp/game src/decomp/pc src/decomp/pc/audio src/decomp/mario src/decomp/tools src/decomp/audio src/sha1
+SRC_DIRS  := src src/decomp src/decomp/audio src/decomp/engine src/decomp/game src/decomp/mario src/decomp/pc src/decomp/tools src/sha1
 BUILD_DIR := build
 ALL_DIRS  := $(addprefix $(BUILD_DIR)/,$(SRC_DIRS))
 

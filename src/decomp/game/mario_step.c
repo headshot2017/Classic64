@@ -3,14 +3,14 @@
 #include "../engine/math_util.h"
 #include "../engine/surface_collision.h"
 #include "mario.h"
-#include "../audio/external.h"
+//#include "audio/external.h"
 //#include "game_init.h"
 #include "interaction.h"
 #include "mario_step.h"
 
 static s16 sMovingSandSpeeds[] = { 12, 8, 4, 0 };
 
-struct Surface gWaterSurfacePseudoFloor = {
+struct SM64SurfaceCollisionData gWaterSurfacePseudoFloor = {
     SURFACE_VERY_SLIPPERY, 0,    0,    0, 0, 0, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
     { 0.0f, 1.0f, 0.0f },  0.0f, 0, NULL, 0
 };
@@ -169,7 +169,7 @@ u32 mario_push_off_steep_floor(struct MarioState *m, u32 action, u32 actionArg) 
 }
 
 u32 mario_update_moving_sand(struct MarioState *m) {
-    struct Surface *floor = m->floor;
+    struct SM64SurfaceCollisionData *floor = m->floor;
     s32 floorType = floor->type;
 
     if (floorType == SURFACE_DEEP_MOVING_QUICKSAND || floorType == SURFACE_SHALLOW_MOVING_QUICKSAND
@@ -187,7 +187,7 @@ u32 mario_update_moving_sand(struct MarioState *m) {
 }
 
 u32 mario_update_windy_ground(struct MarioState *m) {
-    struct Surface *floor = m->floor;
+    struct SM64SurfaceCollisionData *floor = m->floor;
 
     if (floor->type == SURFACE_HORIZONTAL_WIND) {
         f32 pushSpeed;
@@ -255,10 +255,10 @@ s32 stationary_ground_step(struct MarioState *m) {
 }
 
 static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
-    UNUSED struct Surface *lowerWall;
-    struct Surface *upperWall;
-    struct Surface *ceil;
-    struct Surface *floor;
+    UNUSED struct SM64SurfaceCollisionData *lowerWall;
+    struct SM64SurfaceCollisionData *upperWall;
+    struct SM64SurfaceCollisionData *ceil;
+    struct SM64SurfaceCollisionData *floor;
     f32 ceilHeight;
     f32 floorHeight;
     f32 waterLevel;
@@ -271,6 +271,7 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
     ceilHeight = vec3f_find_ceil(nextPos, floorHeight, &ceil);
 
     //waterLevel = find_water_level(nextPos[0], nextPos[2]);
+    waterLevel = m->waterLevel;
 
     m->wall = upperWall;
 
@@ -295,7 +296,7 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
         return GROUND_STEP_LEFT_GROUND;
     }
 
-    if (!(m->action & ACT_FLAG_SHORT_HITBOX) && floorHeight + 160.0f >= ceilHeight) {
+     if (!(m->action & ACT_FLAG_SHORT_HITBOX) && floorHeight + 160.0f >= ceilHeight) {
         return GROUND_STEP_HIT_WALL_STOP_QSTEPS;
     }
 
@@ -345,8 +346,8 @@ s32 perform_ground_step(struct MarioState *m) {
     return stepResult;
 }
 
-u32 check_ledge_grab(struct MarioState *m, struct Surface *wall, Vec3f intendedPos, Vec3f nextPos) {
-    struct Surface *ledgeFloor;
+u32 check_ledge_grab(struct MarioState *m, struct SM64SurfaceCollisionData *wall, Vec3f intendedPos, Vec3f nextPos) {
+    struct SM64SurfaceCollisionData *ledgeFloor;
     Vec3f ledgePos;
     f32 displacementX;
     f32 displacementZ;
@@ -388,10 +389,10 @@ u32 check_ledge_grab(struct MarioState *m, struct Surface *wall, Vec3f intendedP
 s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepArg) {
     s16 wallDYaw;
     Vec3f nextPos;
-    struct Surface *upperWall;
-    struct Surface *lowerWall;
-    struct Surface *ceil;
-    struct Surface *floor;
+    struct SM64SurfaceCollisionData *upperWall;
+    struct SM64SurfaceCollisionData *lowerWall;
+    struct SM64SurfaceCollisionData *ceil;
+    struct SM64SurfaceCollisionData *floor;
     f32 ceilHeight;
     f32 floorHeight;
     f32 waterLevel;
@@ -405,6 +406,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
     ceilHeight = vec3f_find_ceil(nextPos, floorHeight, &ceil);
 
     //waterLevel = find_water_level(nextPos[0], nextPos[2]);
+    waterLevel = m->waterLevel;
 
     m->wall = NULL;
 

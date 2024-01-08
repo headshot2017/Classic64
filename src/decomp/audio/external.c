@@ -35,11 +35,6 @@
 #define SAMPLES_TO_OVERPRODUCE 0x10
 #define EXTRA_BUFFERED_AI_SAMPLES_TARGET 0x40
 
-struct Sound {
-    s32 soundBits;
-    f32 *position;
-}; // size = 0x8
-
 struct ChannelVolumeScaleFade {
     f32 velocity;
     u8 target;
@@ -76,6 +71,9 @@ s32 gAudioErrorFlags2 = 0;
 s32 gAudioErrorFlags = 0;
 #endif
 s32 sGameLoopTicked = 0;
+
+f32 gAudioVolume = 1.0f;
+u8 gAudioReverb = 0.0f;
 
 // Dialog sounds
 // The US difference is the sound for DIALOG_037 ("I win! You lose! Ha ha ha ha!
@@ -410,7 +408,7 @@ extern void func_802ad74c(u32 bits, u32 arg);
 extern void func_802ad770(u32 bits, s8 arg);
 
 static void update_background_music_after_sound(u8 bank, u8 soundIndex);
-static void update_game_sound(void);
+void update_game_sound(void);
 static void fade_channel_volume_scale(u8 player, u8 channelId, u8 targetScale, u16 fadeTimer);
 void process_level_music_dynamics(void);
 static u8 begin_background_music_fade(u16 fadeDuration);
@@ -805,23 +803,9 @@ void create_next_audio_buffer(s16 *samples, u32 num_samples) {
 #endif
 
 /**
- * Called from threads: thread5_game_loop
- */
-void play_sound(s32 soundBits, f32 *pos) {
-    if (pos[0] == -1 && pos[1] == -1 && pos[2] == -1)
-        return; // Classic64: dirty hack for non-local players
-
-    sSoundRequests[sSoundRequestCount].soundBits = soundBits;
-    sSoundRequests[sSoundRequestCount].position = pos;
-    sSoundRequestCount++;
-	//DEBUG_PRINT("play_sound(%d) request#%d; pos %f %f %f\n", soundBits,sSoundRequestCount,pos[0],pos[1],pos[2]);
-}
-
-/**
  * Called from threads: thread4_sound, thread5_game_loop (EU only)
  */
 static void process_sound_request(u32 bits, f32 *pos) {
-	//DEBUG_PRINT("process_sound_request %d\n", bits);
     u8 bank;
     u8 soundIndex;
     u8 counter = 0;
@@ -884,7 +868,7 @@ static void process_sound_request(u32 bits, f32 *pos) {
 
     // If free list has more than one element remaining
     if (sSoundBanks[bank][sSoundBankFreeListFront[bank]].next != 0xff && soundIndex != 0) {
-		//DEBUG_PRINT("process_sound_request2: soundIndex %d\n", soundIndex);
+		DEBUG_PRINT("process_sound_request2: soundIndex %d\n", soundIndex);
         // Allocate from free list
         soundIndex = sSoundBankFreeListFront[bank];
 
@@ -1260,7 +1244,7 @@ static f32 get_sound_volume(u8 bank, u8 soundIndex, f32 volumeRange) {
     }
 
     // Rise quadratically from 1 - volumeRange to 1
-    return volumeRange * intensity * intensity + 1.0f - volumeRange;
+    return (volumeRange * intensity * intensity + 1.0f - volumeRange) * gAudioVolume;
 }
 
 /**
@@ -1310,10 +1294,12 @@ static u8 get_sound_reverb(UNUSED u8 bank, UNUSED u8 soundIndex, u8 channelIndex
     // reverb = reverb adjustment + level reverb + a volume-dependent value
     // The volume-dependent value is 0 when volume is at maximum, and raises to
     // LOW_VOLUME_REVERB when the volume is 0
-    reverb = (u8)((u8) gSequencePlayers[SEQ_PLAYER_SFX].channels[channelIndex]->soundScriptIO[5]
+    /*reverb = (u8)((u8) gSequencePlayers[SEQ_PLAYER_SFX].channels[channelIndex]->soundScriptIO[5]
                   + sLevelAreaReverbs[level][area]
                   + (US_FLOAT(1.0) - gSequencePlayers[SEQ_PLAYER_SFX].channels[channelIndex]->volume)
-                        * LOW_VOLUME_REVERB);
+                        * LOW_VOLUME_REVERB);*/
+
+    reverb = gAudioReverb;
 
     if (reverb > 0x7f) {
         reverb = 0x7f;
@@ -1341,7 +1327,7 @@ void audio_signal_game_loop_tick(void) {
 /**
  * Called from threads: thread4_sound, thread5_game_loop (EU and SH only)
  */
-static void update_game_sound(void) {
+void update_game_sound(void) {
     u8 soundStatus;
     u8 i;
     u8 soundId;

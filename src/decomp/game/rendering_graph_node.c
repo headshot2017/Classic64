@@ -16,7 +16,10 @@
 #include "../shim.h"
 #include "../../gfx_adapter.h"
 
-#include "../mario/model.inc.h" // linux crash fix
+
+
+#include "../mario/model.inc.h"
+
 
 // PATCH
 static Vec3s gVec3sZero = { 0, 0, 0 };

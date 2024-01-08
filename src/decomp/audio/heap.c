@@ -252,26 +252,6 @@ void discard_sequence(s32 seqId) {
 }
 
 void *soundAlloc(struct SoundAllocPool *pool, u32 size) {
-#if defined(VERSION_EU) || defined(VERSION_SH)
-    u8 *start;
-    u8 *pos;
-    u32 alignedSize = ALIGN16(size);
-
-    start = pool->cur;
-    if (start + alignedSize <= pool->start + pool->size) {
-        pool->cur += alignedSize;
-        for (pos = start; pos < pool->cur; pos++) {
-            *pos = 0;
-        }
-    } else {
-        eu_stubbed_printf_1("Heap OverFlow : Not Allocate %d!\n", size);
-        return NULL;
-    }
-#ifdef VERSION_SH
-    pool->numAllocatedEntries++;
-#endif
-    return start;
-#else
     u8 *start;
     s32 last;
     s32 i;
@@ -287,7 +267,6 @@ void *soundAlloc(struct SoundAllocPool *pool, u32 size) {
         return NULL;
     }
     return start;
-#endif
 }
 
 #ifdef VERSION_SH

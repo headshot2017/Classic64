@@ -11,6 +11,8 @@
 #define US_FLOAT2(x) x
 #endif
 
+f32 gTrackVolume = 1.0f;
+
 #if defined(VERSION_EU) || defined(VERSION_SH)
 void sequence_channel_process_sound(struct SequenceChannel *seqChannel, s32 recalculateVolume) {
     f32 channelVolume;
@@ -74,7 +76,7 @@ static void sequence_channel_process_sound(struct SequenceChannel *seqChannel) {
         struct SequenceChannelLayer *layer = seqChannel->layers[i];
         if (layer != NULL && layer->enabled && layer->note != NULL) {
             layer->noteFreqScale = layer->freqScale * seqChannel->freqScale;
-            layer->noteVelocity = layer->velocitySquare * channelVolume;
+            layer->noteVelocity = layer->velocitySquare * (channelVolume * gTrackVolume);
             layer->notePan = (layer->pan * panLayerWeight) + panFromChannel;
         }
     }

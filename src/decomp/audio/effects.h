@@ -33,6 +33,8 @@
 #define BSWAP16(x) (((x) & 0xff) << 8 | (((x) >> 8) & 0xff))
 #endif
 
+extern f32 gTrackVolume;
+
 void sequence_player_process_sound(struct SequencePlayer *seqPlayer);
 void note_vibrato_update(struct Note *note);
 void note_vibrato_init(struct Note *note);

@@ -21,6 +21,7 @@
 #include "Classic64_events.h"
 #include "Classic64_settings.h"
 #include "Classic64_network.h"
+#include "Classic64_audio.h"
 #include "Classic64.h"
 
 #include "ClassiCube/Bitmap.h"
@@ -865,7 +866,7 @@ void marioTick(struct ScheduledTask* task)
 			uint32_t surfaces[MAX_SURFACES];
 			memset(surfaces, -1, sizeof(surfaces));
 			loadNewBlocks(i, Entities_->List[i]->Position.X, Entities_->List[i]->Position.Y, Entities_->List[i]->Position.Z, surfaces);
-			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, 0,0,0,0, (i == ENTITIES_SELF_ID));
+			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, (i == ENTITIES_SELF_ID));
 			if (ID == -1)
 			{
 				if (i == ENTITIES_SELF_ID) SendChat("&cFailed to spawn Mario", NULL, NULL, NULL, NULL);
@@ -1307,7 +1308,7 @@ static void Classic64_Init()
 	fclose(f);
 
 	// perform SHA-1 check to make sure it's the correct ROM
-	char expectedHash[] = "9bef1128717f958171a4afac3ed78ee2bb4e86ce";
+	/*char expectedHash[] = "9bef1128717f958171a4afac3ed78ee2bb4e86ce";
 	char hashResult[21];
 	char hashHexResult[41];
 	SHA1(hashResult, (char*)romBuffer, romFileLength);
@@ -1324,7 +1325,7 @@ static void Classic64_Init()
 		SendChat("&cYour copy: &e%s", &result, NULL, NULL, NULL);
 		SendChat("&cClassic64 will not function with this ROM.", NULL, NULL, NULL, NULL);
 		return;
-	}
+	}*/
 
 	// all good!
 	inited = true;
@@ -1340,7 +1341,10 @@ static void Classic64_Init()
 
 	// load libsm64
 	sm64_global_terminate();
-	sm64_global_init(romBuffer, marioTextureUint8, NULL);
+	sm64_global_init(romBuffer, marioTextureUint8);
+	sm64_audio_init(romBuffer);
+	classic64_audio_init();
+
 	for (int i=0; i<SM64_TEXTURE_WIDTH * SM64_TEXTURE_HEIGHT; i++) // copy texture to classicube bitmap
 	{
 		int x = i % 1024;
@@ -1374,7 +1378,7 @@ static void Classic64_Init()
 		SendChat("&bHave fun playing as Mario!", NULL, NULL, NULL, NULL);
 	}
 
-	String_AppendConst(&Server_->AppName, " + Classic64 Mario64 v1.0");
+	String_AppendConst(&Server_->AppName, " + Classic64 Mario64 v1.1");
 
 	Model_Register(marioModel_GetInstance());
 	Event_Register_(&ChatEvents_->ChatReceived, NULL, OnChatMessage);

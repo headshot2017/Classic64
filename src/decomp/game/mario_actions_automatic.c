@@ -4,7 +4,7 @@
 #include "../include/sm64.h"
 //#include "behavior_data.h"
 #include "mario_actions_automatic.h"
-#include "../audio/external.h"
+//#include "audio/external.h"
 #include "area.h"
 #include "mario.h"
 #include "mario_step.h"
@@ -59,23 +59,14 @@ void play_climbing_sounds(struct MarioState *m, s32 b) {
 //      play_sound(isOnTree ? SOUND_MOVING_SLIDE_DOWN_TREE : SOUND_MOVING_SLIDE_DOWN_POLE,
 //                 m->marioObj->header.gfx.cameraToObject);
 //  }
-
-    if (b == 1)
-    {
-        if (is_anim_past_frame(m, 1)) {
-            play_sound(SOUND_ACTION_CLIMB_UP_POLE, m->marioObj->header.gfx.cameraToObject);
-        }
-    } else {
-        play_sound(SOUND_MOVING_SLIDE_DOWN_POLE, m->marioObj->header.gfx.cameraToObject);
-    }
 }
 
 s32 set_pole_position(struct MarioState *m, f32 offsetY) {
     UNUSED s32 unused1;
     UNUSED s32 unused2;
     UNUSED s32 unused3;
-    struct Surface *floor;
-    struct Surface *ceil;
+    struct SM64SurfaceCollisionData *floor;
+    struct SM64SurfaceCollisionData *ceil;
     f32 floorHeight;
     f32 ceilHeight;
     s32 collided;
@@ -106,7 +97,7 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
         set_mario_action(m, ACT_IDLE, 0);
         result = POLE_TOUCHED_FLOOR;
     } else if (marioObj->oMarioPolePos < 0) {
-        m->pos[1] = m->polePos[1] - 0;
+        m->pos[1] = m->polePos[1] - m->usedObj->hitboxDownOffset;
         set_mario_action(m, ACT_FREEFALL, 0);
         result = POLE_FELL_OFF;
     } else if (collided) {
@@ -317,8 +308,8 @@ s32 act_top_of_pole(struct MarioState *m) {
 
 s32 perform_hanging_step(struct MarioState *m, Vec3f nextPos) {
     UNUSED s32 unused;
-    struct Surface *ceil;
-    struct Surface *floor;
+    struct SM64SurfaceCollisionData *ceil;
+    struct SM64SurfaceCollisionData *floor;
     f32 ceilHeight;
     f32 floorHeight;
     f32 ceilOffset;
@@ -508,7 +499,7 @@ s32 act_hang_moving(struct MarioState *m) {
 
 s32 let_go_of_ledge(struct MarioState *m) {
     f32 floorHeight;
-    struct Surface *floor;
+    struct SM64SurfaceCollisionData *floor;
 
     m->vel[1] = 0.0f;
     m->forwardVel = -8.0f;
@@ -784,7 +775,7 @@ s32 act_in_cannon(struct MarioState *m) {
 }
 
 s32 act_tornado_twirling(struct MarioState *m) {
-    struct Surface *floor;
+    struct SM64SurfaceCollisionData *floor;
     Vec3f nextPos;
     f32 sinAngleVel;
     f32 cosAngleVel;

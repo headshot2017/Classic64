@@ -1,9 +1,10 @@
 #pragma once
 
-#include <types.h>
+#include "include/types.h"
 #include "game/area.h"
 #include "game/level_update.h"
 #include "../libsm64.h"
+#include "../play_sound.h"
 #include "global_state.h"
 
 #define COURSE_MIN    0
@@ -36,12 +37,11 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-//extern void play_sound(s32 soundBits, f32 *pos);
 static void enable_time_stop() {}
 static void disable_time_stop() {}
 static void *segmented_to_virtual(const void *addr) { return (void*)addr; }
 static void *virtual_to_segmented(u32 segment, const void *addr) { return (void*)addr; }
-//static void func_80320A4C(u8 bankIndex, u8 arg1) {}
+static void func_80320A4C(u8 bankIndex, u8 arg1) {}
 static void raise_background_noise(s32 a) {}
 static void lower_background_noise(s32 a) {}
 static void set_camera_mode(struct Camera *c, s16 mode, s16 frames) {}

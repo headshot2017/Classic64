@@ -28,8 +28,8 @@ void play_mario_sound(struct MarioState *m, s32 primarySoundBits, s32 scondarySo
 void mario_set_forward_vel(struct MarioState *m, f32 speed);
 s32 mario_get_floor_class(struct MarioState *m);
 u32 mario_get_terrain_sound_addend(struct MarioState *m);
-struct Surface *resolve_and_return_wall_collisions(Vec3f pos, f32 offset, f32 radius);
-f32 vec3f_find_ceil(Vec3f pos, f32 height, struct Surface **ceil);
+struct SM64SurfaceCollisionData *resolve_and_return_wall_collisions(Vec3f pos, f32 offset, f32 radius);
+f32 vec3f_find_ceil(Vec3f pos, f32 height, struct SM64SurfaceCollisionData **ceil);
 s32 mario_facing_downhill(struct MarioState *m, s32 turnYaw);
 u32 mario_floor_is_slippery(struct MarioState *m);
 s32 mario_floor_is_slope(struct MarioState *m);
@@ -50,6 +50,5 @@ s32 set_water_plunge_action(struct MarioState *m);
 s32 execute_mario_action(UNUSED struct Object *o);
 int init_mario(void);
 void init_mario_from_save_file(void);
-void mario_update_hitbox_and_cap_model(struct MarioState *m);
 
 #endif // MARIO_H
