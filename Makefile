@@ -2,7 +2,7 @@ default: debug
 
 CC      := gcc
 CXX 	:= g++
-CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS -D_WIN32_WINNT=0x0501
+CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
 LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC
 
@@ -11,6 +11,7 @@ LIB_FILE := $(DIST_DIR)/libClassic64.so
 
 ifeq ($(OS),Windows_NT)
 LIB_FILE := $(DIST_DIR)/Classic64.dll
+CFLAGS := $(CFLAGS) -D_WIN32_WINNT=0x0501
 LDFLAGS := $(LDFLAGS) -mwindows
 ENDFLAGS := $(ENDFLAGS) -static -Lsrc/ClassiCube/x86 -Lsrc/ClassiCube/x64 -lClassiCube -lSDL2 -lole32 -lwinmm -loleaut32 -limm32 -lversion -lsetupapi
 
