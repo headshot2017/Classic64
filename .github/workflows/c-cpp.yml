@@ -16,11 +16,11 @@ jobs:
       - name: Run make
         run: make
 
-    - name: Set up MinGW 32 bit
-      uses: egor-tensin/setup-mingw@v2
-      with:
-        platform: x86
-        version: 12.2.0
+      - name: Set up MinGW 32 bit
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x86
+          version: 12.2.0
 
       - name: Use the Upload Artifact GitHub Action
         uses: actions/upload-artifact@v2
