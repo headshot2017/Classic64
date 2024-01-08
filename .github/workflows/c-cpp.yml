@@ -14,13 +14,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up MinGW 32 bit
-        uses: egor-tensin/setup-mingw@v2
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
         with:
-          platform: x86
-          version: 12.2.0
+          msystem: MINGW32
+
+      - name: Install dependencies
+        shell: msys2 {0}
+        run: pacman -Sy mingw-w64-i686-SDL2
 
       - name: Run make
+        shell: msys2 {0}
         run: make
 
       - name: Use the Upload Artifact GitHub Action
