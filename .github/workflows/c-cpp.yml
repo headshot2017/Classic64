@@ -21,7 +21,7 @@ jobs:
 
       - name: Install dependencies
         shell: msys2 {0}
-        run: pacman -Sy mingw-w64-i686-SDL2
+        run: pacman --noconfirm -S mingw-w64-i686-SDL2
 
       - name: Run make
         shell: msys2 {0}
