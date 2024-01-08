@@ -7,8 +7,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build-windows:
-
+  build-windows-x86:
     runs-on: windows-latest
 
     steps:
@@ -28,13 +27,39 @@ jobs:
         run: make
 
       - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: classic64-windows
+          name: classic64-windows-32bit
           path: dist
 
-  build-linux:
 
+  build-windows-x64:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+
+      - name: Install dependencies
+        shell: msys2 {0}
+        run: pacman --noconfirm -S mingw-w64-x86_64-SDL2 mingw-w64-x86_64-gcc make python3
+
+      - name: Run make
+        shell: msys2 {0}
+        run: make
+
+      - name: Use the Upload Artifact GitHub Action
+        uses: actions/upload-artifact@v3
+        with:
+          name: classic64-windows-64bit
+          path: dist
+
+
+  build-linux-x64:
     runs-on: ubuntu-latest
 
     steps:
@@ -47,7 +72,28 @@ jobs:
         run: make
       
       - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: classic64-linux
+          name: classic64-linux-x64
+          path: dist
+
+
+  build-linux-x86:
+    runs-on: ubuntu-latest
+    container:
+      image: i386/ubuntu:latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies libsdl2-dev
+        run: sudo apt-get install -y libsdl2-dev
+
+      - name: Run make
+        run: make
+      
+      - name: Use the Upload Artifact GitHub Action
+        uses: actions/upload-artifact@v3
+        with:
+          name: classic64-linux-x86
           path: dist
