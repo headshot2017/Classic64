@@ -13,7 +13,7 @@ ifeq ($(OS),Windows_NT)
 LIB_FILE := $(DIST_DIR)/Classic64.dll
 CFLAGS := $(CFLAGS) -D_WIN32_WINNT=0x0501
 LDFLAGS := $(LDFLAGS) -mwindows
-ENDFLAGS := $(ENDFLAGS) -static -Lsrc/ClassiCube/x86 -Lsrc/ClassiCube/x64 -lClassiCube -lSDL2 -lole32 -lwinmm -loleaut32 -limm32 -lversion -lsetupapi
+ENDFLAGS := $(ENDFLAGS) -static -Lsrc/ClassiCube/x86 -Lsrc/ClassiCube/x64 -lClassiCube -lole32 -lwinmm -loleaut32 -limm32 -lversion -lsetupapi
 
 else ifeq ($(shell uname -s),Darwin)
 LIB_FILE := $(DIST_DIR)/libClassic64.dylib
