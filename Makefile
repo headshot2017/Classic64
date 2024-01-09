@@ -4,7 +4,7 @@ CC      := gcc
 CXX 	:= g++
 CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
 LDFLAGS := -lm -shared -lpthread
-ENDFLAGS := -fPIC
+ENDFLAGS := -fPIC -lSDL2
 
 DIST_DIR  := dist
 LIB_FILE := $(DIST_DIR)/libClassic64.so
@@ -19,9 +19,6 @@ else ifeq ($(shell uname -s),Darwin)
 LIB_FILE := $(DIST_DIR)/libClassic64.dylib
 CFLAGS   := $(CFLAGS) -Isrc/decomp/include
 ENDFLAGS := -undefined dynamic_lookup
-
-else ifeq ($(shell uname -s),Linux)
-CC      := musl-gcc
 
 endif
 
