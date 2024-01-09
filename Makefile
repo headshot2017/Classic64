@@ -20,6 +20,9 @@ LIB_FILE := $(DIST_DIR)/libClassic64.dylib
 CFLAGS   := $(CFLAGS) -Isrc/decomp/include
 ENDFLAGS := -undefined dynamic_lookup
 
+else ifeq ($(shell uname -s),Linux)
+CC      := musl-gcc
+
 endif
 
 SRC_DIRS  := src src/decomp src/decomp/audio src/decomp/engine src/decomp/game src/decomp/mario src/decomp/pc src/decomp/tools src/sha1
