@@ -124,3 +124,25 @@ jobs:
         with:
           name: classic64-linux-x86
           path: lib
+
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Compile debug and release
+        run: |
+          mkdir lib lib/debug lib/release
+          make
+          cp dist/libClassic64.dylib lib/debug
+          make clean
+          make release
+          cp dist/libClassic64.dylib lib/release
+      
+      - name: Use the Upload Artifact GitHub Action
+        uses: actions/upload-artifact@v3
+        with:
+          name: classic64-macos
+          path: lib
