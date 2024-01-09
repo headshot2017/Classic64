@@ -132,8 +132,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: gcc 10
-        run: brew install gcc@10
+      - name: macports
+        run: |
+          wget https://github.com/macports/macports-base/releases/download/v2.7.1/MacPorts-2.7.1-11-BigSur.pkg
+          sudo installer -pkg ./MacPorts-2.7.1-11-BigSur.pkg -target /
+          sudo port install gcc10 libsdl2
 
       - name: Compile debug and release
         run: |
