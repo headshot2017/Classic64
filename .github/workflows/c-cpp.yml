@@ -68,7 +68,7 @@ jobs:
       - name: Use the Upload Artifact GitHub Action
         uses: actions/upload-artifact@v3
         with:
-          name: classic64-windows-64bit
+          name: classic64-windows-x64
           path: lib
 
 
