@@ -132,6 +132,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: gcc 10
+        run: brew install gcc@10
+
       - name: Compile debug and release
         run: |
           mkdir lib lib/debug lib/release

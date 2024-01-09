@@ -16,8 +16,8 @@ LDFLAGS := $(LDFLAGS) -mwindows
 ENDFLAGS := $(ENDFLAGS) -static -Lsrc/ClassiCube/x86 -Lsrc/ClassiCube/x64 -lClassiCube -lole32 -lwinmm -loleaut32 -limm32 -lversion -lsetupapi
 
 else ifeq ($(shell uname -s),Darwin)
-CC      := gcc-11
-CXX 	:= g++-11
+CC      := gcc-10
+CXX 	:= g++-10
 LIB_FILE := $(DIST_DIR)/libClassic64.dylib
 CFLAGS   := $(CFLAGS) -Isrc/decomp/include
 ENDFLAGS := -undefined dynamic_lookup
