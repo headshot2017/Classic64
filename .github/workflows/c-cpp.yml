@@ -136,9 +136,7 @@ jobs:
         run: |
           wget https://github.com/macports/macports-base/releases/download/v2.8.0/MacPorts-2.8.0-12-Monterey.pkg
           sudo installer -pkg ./MacPorts-2.8.0-12-Monterey.pkg -target /
-
-      - name: Install dependencies on macports
-        run: sudo port install gcc10 libsdl2
+          sudo /opt/local/bin/port install gcc10 libsdl2
 
       - name: Compile debug and release
         run: |
