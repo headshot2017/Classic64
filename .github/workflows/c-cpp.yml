@@ -22,15 +22,22 @@ jobs:
         shell: msys2 {0}
         run: pacman --noconfirm -S mingw-w64-i686-SDL2 mingw-w64-i686-gcc make python3
 
-      - name: Run make
+      - name: Compile debug and release
         shell: msys2 {0}
-        run: make
+        run: |
+          mkdir lib lib/debug lib/release
+          make
+          cp dist/Classic64.dll lib/debug
+          make clean
+          make release
+          cp dist/Classic64.dll lib/release
+          
 
       - name: Use the Upload Artifact GitHub Action
         uses: actions/upload-artifact@v3
         with:
-          name: classic64-windows-32bit
-          path: dist
+          name: classic64-windows-x86
+          path: lib
 
 
   build-windows-x64:
@@ -48,15 +55,21 @@ jobs:
         shell: msys2 {0}
         run: pacman --noconfirm -S mingw-w64-x86_64-SDL2 mingw-w64-x86_64-gcc make python3
 
-      - name: Run make
+      - name: Compile debug and release
         shell: msys2 {0}
-        run: make
+        run: |
+          mkdir lib lib/debug lib/release
+          make
+          cp dist/Classic64.dll lib/debug
+          make clean
+          make release
+          cp dist/Classic64.dll lib/release
 
       - name: Use the Upload Artifact GitHub Action
         uses: actions/upload-artifact@v3
         with:
           name: classic64-windows-64bit
-          path: dist
+          path: lib
 
 
   build-linux-x64:
@@ -68,14 +81,20 @@ jobs:
       - name: Install dependencies libsdl2-dev
         run: sudo apt-get install -y libsdl2-dev
 
-      - name: Run make
-        run: make
-      
+      - name: Compile debug and release
+        run: |
+          mkdir lib lib/debug lib/release
+          make
+          cp dist/libClassic64.so lib/debug
+          make clean
+          make release
+          cp dist/libClassic64.so lib/release
+
       - name: Use the Upload Artifact GitHub Action
         uses: actions/upload-artifact@v3
         with:
           name: classic64-linux-x64
-          path: dist
+          path: lib
 
 
   build-linux-x86:
@@ -91,11 +110,17 @@ jobs:
 
       - uses: actions/checkout@v1
 
-      - name: Run make
-        run: make
+      - name: Compile debug and release
+        run: |
+          mkdir lib lib/debug lib/release
+          make
+          cp dist/libClassic64.so lib/debug
+          make clean
+          make release
+          cp dist/libClassic64.so lib/release
       
       - name: Use the Upload Artifact GitHub Action
         uses: actions/upload-artifact@v1
         with:
           name: classic64-linux-x86
-          path: dist
+          path: lib
