@@ -1,5 +1,7 @@
 #include "load_audio_data.h"
 
+#include <string.h>
+
 #include "decomp/tools/convUtils.h"
 #include "decomp/audio/load.h"
 #include "decomp/audio/load_dat.h"
