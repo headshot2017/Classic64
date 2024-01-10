@@ -16,7 +16,7 @@ LDFLAGS := $(LDFLAGS) -mwindows
 ENDFLAGS := $(ENDFLAGS) -static -Lsrc/ClassiCube/x86 -Lsrc/ClassiCube/x64 -lClassiCube -lole32 -lwinmm -loleaut32 -limm32 -lversion -lsetupapi
 
 else ifeq ($(shell uname -s),Darwin)
-LIB_FILE := $(DIST_DIR)/libClassic64.dylib
+LIB_FILE := libClassic64.dylib
 CFLAGS   := $(CFLAGS) -Isrc/decomp/include
 ENDFLAGS := $(ENDFLAGS) -undefined dynamic_lookup
 
@@ -26,7 +26,6 @@ SRC_DIRS  := src src/decomp src/decomp/audio src/decomp/engine src/decomp/game s
 BUILD_DIR := build
 ALL_DIRS  := $(addprefix $(BUILD_DIR)/,$(SRC_DIRS))
 
-LIB_H_FILE := $(DIST_DIR)/include/libsm64.h
 TEST_FILE  := run-test
 
 C_IMPORTED := src/decomp/mario/geo.inc.c src/decomp/mario/model.inc.c
@@ -65,9 +64,6 @@ $(BUILD_DIR)/%.o: %.cpp $(IMPORTED)
 $(LIB_FILE): $(O_FILES)
 	$(CC) $(LDFLAGS) -o $@ $^ $(ENDFLAGS)
 
-$(LIB_H_FILE): src/libsm64.h
-	cp -f $< $@
-
 test/main.c: test/level.h
 
 $(BUILD_DIR)/test/%.o: test/%.c
@@ -87,14 +83,14 @@ endif
 
 debug: CFLAGS += -g -DCLASSIC64_DEBUG
 debug: LDFLAGS += -g
-debug: $(LIB_FILE) $(LIB_H_FILE)
+debug: $(LIB_FILE)
 
 # libsm64 refuses to work with -O3 and -O2
 release: CFLAGS += -O1
 release: LDFLAGS += -O1
-release: $(LIB_FILE) $(LIB_H_FILE)
+release: $(LIB_FILE)
 
-test: $(TEST_FILE) $(LIB_H_FILE)
+test: $(TEST_FILE)
 
 run: test
 	./$(TEST_FILE)

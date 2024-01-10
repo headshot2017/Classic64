@@ -137,12 +137,12 @@ jobs:
 
       - name: Compile debug and release
         run: |
-          mkdir lib lib/debug lib/release dist dist/include
+          mkdir lib lib/debug lib/release
           make
-          cp dist/libClassic64.dylib lib/debug
+          cp libClassic64.dylib lib/debug
           make clean
           make release
-          cp dist/libClassic64.dylib lib/release
+          cp libClassic64.dylib lib/release
       
       - name: Use the Upload Artifact GitHub Action
         uses: actions/upload-artifact@v3
