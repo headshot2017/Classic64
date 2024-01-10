@@ -132,11 +132,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install macports
-        run: |
-          wget https://github.com/macports/macports-base/releases/download/v2.8.0/MacPorts-2.8.0-12-Monterey.pkg
-          sudo installer -pkg ./MacPorts-2.8.0-12-Monterey.pkg -target /
-          sudo /opt/local/bin/port install gcc10 libsdl2
+      - name: Install sdl2 dependency
+        run: brew install sdl2
 
       - name: Compile debug and release
         run: |
@@ -150,5 +147,5 @@ jobs:
       - name: Use the Upload Artifact GitHub Action
         uses: actions/upload-artifact@v3
         with:
-          name: classic64-macos
+          name: classic64-macos-intel64
           path: lib
