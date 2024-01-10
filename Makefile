@@ -18,7 +18,7 @@ ENDFLAGS := $(ENDFLAGS) -static -Lsrc/ClassiCube/x86 -Lsrc/ClassiCube/x64 -lClas
 else ifeq ($(shell uname -s),Darwin)
 LIB_FILE := libClassic64.dylib
 CFLAGS   := $(CFLAGS) -Isrc/decomp/include
-ENDFLAGS := $(ENDFLAGS) -undefined dynamic_lookup
+ENDFLAGS := $(ENDFLAGS) -static -undefined dynamic_lookup
 
 endif
 
