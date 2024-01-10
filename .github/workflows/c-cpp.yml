@@ -137,7 +137,7 @@ jobs:
 
       - name: Compile debug and release
         run: |
-          mkdir lib lib/debug lib/release
+          mkdir lib lib/debug lib/release dist dist/include
           make
           cp dist/libClassic64.dylib lib/debug
           make clean
