@@ -239,7 +239,7 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 		if (argsCount > 2 && !String_Compare(&args[2], &on) && (music == SEQ_MENU_TITLE_SCREEN || music == SEQ_LEVEL_WATER))
 			variation = SEQ_VARIATION;
 
-		for (int i=0; i<SEQ_COUNT; i++) sm64_stop_background_music(i);
+		if (sm64_get_current_background_music() >= 0) sm64_stop_background_music(sm64_get_current_background_music());
 		if (music != 0) sm64_play_music(0, ((0 << 8) | music | variation), 0);
 		return;
 	}
