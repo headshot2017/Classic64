@@ -132,8 +132,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install sdl2 dependency
-        run: brew install sdl2
+      - name: Install gcc10 and sdl2 on Homebrew
+        run: brew install gcc@10 sdl2
+
+      - run: which gcc
 
       - name: Compile debug and release
         run: |
