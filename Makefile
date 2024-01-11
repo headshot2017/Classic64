@@ -17,10 +17,10 @@ ENDFLAGS := $(ENDFLAGS) -static -Lsrc/ClassiCube/x86 -Lsrc/ClassiCube/x64 -lClas
 
 else ifeq ($(shell uname -s),Darwin)
 BREW_SDL2_PREFIX := $(shell brew --prefix sdl2)
-CFLAGS := $(CFLAGS) -isystem $(BREW_SDL2_PREFIX)/include -L$(BREW_SDL2_PREFIX)/lib
-LIB_FILE := libClassic64.dylib
-CFLAGS   := $(CFLAGS) -Isrc/decomp/include
+CFLAGS := $(CFLAGS) -isystem $(BREW_SDL2_PREFIX)/include -Isrc/decomp/include
+LDFLAGS := $(LDFLAGS) -L$(BREW_SDL2_PREFIX)/lib
 ENDFLAGS := $(ENDFLAGS) -undefined dynamic_lookup
+LIB_FILE := libClassic64.dylib
 
 endif
 
