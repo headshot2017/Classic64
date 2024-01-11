@@ -19,7 +19,7 @@ else ifeq ($(shell uname -s),Darwin)
 CFLAGS := $(CFLAGS) -isystem /usr/local/include
 LIB_FILE := libClassic64.dylib
 CFLAGS   := $(CFLAGS) -Isrc/decomp/include
-ENDFLAGS := $(ENDFLAGS) -static -undefined dynamic_lookup
+ENDFLAGS := $(ENDFLAGS) -undefined dynamic_lookup
 
 endif
 
