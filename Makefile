@@ -16,7 +16,8 @@ LDFLAGS := $(LDFLAGS) -mwindows
 ENDFLAGS := $(ENDFLAGS) -static -Lsrc/ClassiCube/x86 -Lsrc/ClassiCube/x64 -lClassiCube -lole32 -lwinmm -loleaut32 -limm32 -lversion -lsetupapi
 
 else ifeq ($(shell uname -s),Darwin)
-CFLAGS := $(CFLAGS) -isystem /usr/local/include
+HOMEBREW_PREFIX := $(shell brew --prefix)
+CFLAGS := $(CFLAGS) -isystem $(HOMEBREW_PREFIX)/include -L$(HOMEBREW_PREFIX)/lib
 LIB_FILE := libClassic64.dylib
 CFLAGS   := $(CFLAGS) -Isrc/decomp/include
 ENDFLAGS := $(ENDFLAGS) -undefined dynamic_lookup
