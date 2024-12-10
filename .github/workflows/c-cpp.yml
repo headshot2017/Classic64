@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         shell: msys2 {0}
-        run: pacman --noconfirm -S mingw-w64-i686-SDL2 mingw-w64-i686-gcc make python3 unzip
+        run: pacman --noconfirm -S mingw-w64-i686-SDL2 mingw-w64-i686-gcc mingw-w64-i686-tools make python3 unzip
 
       - name: Generate libClassiCube.a
         shell: msys2 {0}
@@ -65,7 +65,7 @@ jobs:
 
       - name: Install dependencies
         shell: msys2 {0}
-        run: pacman --noconfirm -S mingw-w64-x86_64-SDL2 mingw-w64-x86_64-gcc make python3 unzip
+        run: pacman --noconfirm -S mingw-w64-x86_64-SDL2 mingw-w64-x86_64-gcc mingw-w64-x86_64-tools make python3 unzip
 
       - name: Generate libClassiCube.a
         shell: msys2 {0}
@@ -130,7 +130,7 @@ jobs:
           apt-get update
           apt-get install -y build-essential git libssl-dev curl libsdl2-dev
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           submodules: true
 
