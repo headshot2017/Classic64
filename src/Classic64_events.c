@@ -37,7 +37,7 @@ void OnHacksChanged(void* obj)
 	struct LocalPlayer* p = Entities.CurPlayer;
 	struct HacksComp* hax = &p->Hacks;
 
-	if (!String_ContainsConst(&hax->HacksFlags, "+mario64") && (!hax->CanAnyHacks || !hax->CanFly))
+	if (!String_ContainsConst(&hax->HacksFlags, "+mario64") && !hax->CanFly)
 	{
 		cc_string humanModelName = String_FromReadonly(Models.Human->name);
 		Entity_SetModel(&p->Base, &humanModelName);
