@@ -3,14 +3,15 @@ A plugin for [ClassiCube](https://classicube.net) which uses libsm64 to insert a
 
 ![Hey stinky!](screenshot.png)
 
-[libsm64 audio fork by ckosmic](https://github.com/ckosmic/libsm64/tree/audio)<br/>
 This project was not created by, or is related with the developers of the Minecraft mod "Retro64".<br/>
 [ClassiCube](https://github.com/UnknownShadow200/ClassiCube) is a custom Minecraft Classic client written in C.
 
 ## Compiling the plugin
 ### Windows
-Download the [MSYS2](https://msys2.org/#installation) development environment, launch MSYS2 MinGW x64 and install gcc and make with `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-make`.
-Finally, run `make`.
+* Download the [MSYS2](https://msys2.org/#installation) development environment, launch MSYS2 MinGW x64 and install the dependencies: `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-tools mingw-w64-x86_64-SDL2`.
+  * To compile for 32-bit, open MSYS MinGW x86 instead, and replace `x86_64` with `i686` in the command
+* Follow [these instructions](https://github.com/ClassiCube/ClassiCube/blob/master/doc/plugin-dev.md#using-mingw-w64) to compile libClassiCube.a (needed to compile the plugin)
+* Run `make`.
 
 A folder named "dist" will be created and inside will sit the plugin dll file "Classic64.dll".
 Copy this to your ClassiCube plugins folder.
@@ -25,22 +26,20 @@ sudo apt install gcc g++ make
 sudo pacman -S gcc make
 ```
 
-By default, the makefile will compile with ALSA and PulseAudio for providing sound, so you must install these dependencies as well:
+By default, the makefile will compile with SDL2 for providing sound, so you must install the dependency as well:
 ```
 # For Ubuntu and derivatives like Linux Mint and Pop!_OS:
-sudo apt install libasound2-dev libpulse-dev
+sudo apt install libsdl2-dev
 
 # For Arch Linux and derivatives like Manjaro:
-sudo pacman -S alsa-lib libpulse
+sudo pacman -S sdl2
 ```
-
-SDL2 is also supported as sound output but disabled by default. You can enable it by editing the makefile and adding `-DUSE_SDL2` and linking against `-lSDL2`.
 
 ## Running the plugin
 **You are required to supply a dumped copy of your Super Mario 64 US ROM, placed inside the plugins folder, with the filename "sm64.us.z64".
 Otherwise the plugin will refuse to work.**
 
-This plugin only works on 64-bit systems, Windows and Linux. macOS has not been tested.
+This plugin works on Windows and Linux, 32-bit and 64-bit. macOS has not been tested.
 
 ## How to play
 To turn into Mario, run the command `/model mario64`. This will let everyone on the server using this plugin know that you're playing as Mario, and will display the model on their end.
