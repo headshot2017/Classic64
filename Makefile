@@ -2,7 +2,7 @@ default: debug
 
 CC      := gcc
 CXX 	:= g++
-CFLAGS  := -Wall -Wno-incompatible-pointer-types -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
+CFLAGS  := -Wall -Wno-incompatible-pointer-types -Wno-int-conversion -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
 LDFLAGS := -lm -shared -lpthread
 ENDFLAGS := -fPIC -lSDL2
 

@@ -1,7 +1,7 @@
 #ifndef CLASSIC64_NETWORK_H
 #define CLASSIC64_NETWORK_H
 
-#include "ClassiCube/Core.h"
+#include "../ClassiCube/src/Core.h"
 
 // from Stream.h
 cc_uint16 Stream_GetU16_BE(const cc_uint8* data);

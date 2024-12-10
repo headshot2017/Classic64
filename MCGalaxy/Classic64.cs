@@ -72,6 +72,7 @@ namespace MCGalaxy
 			OnPlayerDisconnectEvent.Register(OnPlayerDisconnect, Priority.Critical);
 			OnJoinedLevelEvent.Register(OnJoinedLevel, Priority.Critical);
 			OnSentMapEvent.Register(OnSentMap, Priority.Critical);
+			OnSendingMotdEvent.Register(OnSendingMotd, Priority.Critical)
 
 			ModelInfo.Models.Add(new ModelInfo("mario64", 10,10,10, 15));
 			marioTask = Server.Critical.QueueRepeat(marioTick, null, TimeSpan.FromSeconds(1.0/30));
@@ -84,6 +85,7 @@ namespace MCGalaxy
 			OnPlayerDisconnectEvent.Unregister(OnPlayerDisconnect);
 			OnJoinedLevelEvent.Unregister(OnJoinedLevel);
 			OnSentMapEvent.Unregister(OnSentMap);
+			OnSendingMotdEvent.Unregister(OnSendingMotd);
 
 			Server.Critical.Cancel(marioTask);
 
@@ -269,6 +271,23 @@ namespace MCGalaxy
 			}
 		}
 
+		void OnSendingMotd(Player p, ref string motd)
+		{
+			string[] motdParts = motd.SplitSpaces();
+			bool mario64 = false;
+			for (int i=0; i<motdParts.Length; i++)
+			{
+				if (motdParts[i].CaselessEq("+mario64"))
+				{
+					mario64 = true;
+					break;
+				}
+			}
+
+			if (!mario64 && Hacks.MakeHackControl(p, motd)[1] == 0)
+				p.UpdateModel("humanoid");
+		}
+
 		static void OnPluginMessageReceived(Player p, byte channel, byte[] data)
 		{
 			if (channel != 64) return;
@@ -313,9 +332,9 @@ namespace MCGalaxy
 							}
 						}
 
-						if (!mario64 && (!Hacks.CanUseHacks(p) || !Hacks.CanUseFly(p)))
+						if (!mario64 && !Hacks.CanUseFly(p))
 						{
-							p.Message("&cHacks are disabled, cannot switch to Mario");
+							p.Message("&cFlying is disabled here, cannot switch to Mario");
 							p.UpdateModel("humanoid");
 							return;
 						}

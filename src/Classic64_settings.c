@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "Classic64_settings.h"
-#include "ClassiCube/Core.h"
+#include "../ClassiCube/src/Core.h"
 
 // from Input.h
 const char* keyNames[] = {"none",

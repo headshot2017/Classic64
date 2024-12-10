@@ -24,24 +24,25 @@
 #include "Classic64_audio.h"
 #include "Classic64.h"
 
-#include "ClassiCube/Bitmap.h"
-#include "ClassiCube/Block.h"
-#include "ClassiCube/Camera.h"
-#include "ClassiCube/Chat.h"
-#include "ClassiCube/Drawer2D.h"
-#include "ClassiCube/Entity.h"
-#include "ClassiCube/Event.h"
-#include "ClassiCube/ExtMath.h"
-#include "ClassiCube/Game.h"
-#include "ClassiCube/Graphics.h"
-#include "ClassiCube/Gui.h"
-#include "ClassiCube/Input.h"
-#include "ClassiCube/Lighting.h"
-#include "ClassiCube/Model.h"
-#include "ClassiCube/Protocol.h"
-#include "ClassiCube/Server.h"
-#include "ClassiCube/Window.h"
-#include "ClassiCube/World.h"
+#include "../ClassiCube/src/Bitmap.h"
+#include "../ClassiCube/src/Block.h"
+#include "../ClassiCube/src/Camera.h"
+#include "../ClassiCube/src/Chat.h"
+#include "../ClassiCube/src/Commands.h"
+#include "../ClassiCube/src/Drawer2D.h"
+#include "../ClassiCube/src/Entity.h"
+#include "../ClassiCube/src/Event.h"
+#include "../ClassiCube/src/ExtMath.h"
+#include "../ClassiCube/src/Game.h"
+#include "../ClassiCube/src/Graphics.h"
+#include "../ClassiCube/src/Gui.h"
+#include "../ClassiCube/src/InputHandler.h"
+#include "../ClassiCube/src/Lighting.h"
+#include "../ClassiCube/src/Model.h"
+#include "../ClassiCube/src/Protocol.h"
+#include "../ClassiCube/src/Server.h"
+#include "../ClassiCube/src/Window.h"
+#include "../ClassiCube/src/World.h"
 
 #define sign(x) ((x>0)?1:(x<0)?-1:0)
 #define clamp(x, Min, Max) ((x>Max)?Max:(x<Min)?Min:x)
@@ -87,6 +88,7 @@ static struct _CameraData* Camera_;
 static struct _GuiData* Gui_;
 static struct _Lighting* Lighting_;
 static struct _ChatEventsList* ChatEvents_;
+static struct _UserEventsList* UserEvents_;
 static struct _GfxEventsList* GfxEvents_;
 static struct _InputEventsList* InputEvents_;
 static struct _NetEventsList* NetEvents_;
@@ -147,14 +149,14 @@ static void marioModel_GetTransform(struct Entity* entity, Vec3 pos, struct Matr
 {
 	struct Matrix tmp;
 	Matrix_Scale(m, 1,1,1);
-	Matrix_Translate(&tmp, pos.X, pos.Y, pos.Z);
+	Matrix_Translate(&tmp, pos.x, pos.y, pos.z);
 	Matrix_MulBy(m, &tmp);
 }
 
 static struct ModelTex unused_tex = { "char.png" }; // without this, the game crashes in first person view with nothing held in hand
 static void marioModel_DrawArm(struct Entity* entity) {}
 static void marioModel_MakeParts(void) {}
-static float marioModel_GetNameY(struct Entity* e) { return (1+0.25f) * e->ModelScale.Y; }
+static float marioModel_GetNameY(struct Entity* e) { return (1+0.25f) * e->ModelScale.y; }
 static float marioModel_GetEyeY(struct Entity* e)  { return 1; }
 static void marioModel_GetSize(struct Entity* e) {e->Size = (Vec3) { 0.5f, 1, 0.5f };}
 static void marioModel_GetBounds(struct Entity* e) {AABB_Make(&e->ModelAABB, &e->Position, &e->Size);}
@@ -292,15 +294,16 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 	}
 	else if (String_Compare(&args[0], &options[3]) == 0) // force-switch to mario
 	{
-		if (!String_ContainsConst(&Server_->MOTD, "+mario64") && (String_ContainsConst(&Server_->MOTD, "-hax") || String_ContainsConst(&Server_->MOTD, "-fly")))
+		struct HacksComp* hax = &Entities_->CurPlayer->Hacks;
+		if (!String_ContainsConst(&hax->HacksFlags, "+mario64") && !hax->CanFly)
 		{
-			SendChat("&cHacks are disabled, cannot switch to Mario", NULL, NULL, NULL, NULL);
+			SendChat("&cFlying is disabled here, cannot switch to Mario", NULL, NULL, NULL, NULL);
 			return;
 		}
 
 		if (!serverHasPlugin)
 		{
-			cc_string model = String_FromConst( (strcmp(Entities_->List[ENTITIES_SELF_ID]->Model->name, "mario64") == 0) ? "human" : "mario64" );
+			cc_string model = String_FromReadonly( (strcmp(Entities_->List[ENTITIES_SELF_ID]->Model->name, "mario64") == 0) ? Models.Human->name : "mario64" );
 			Entity_SetModel(Entities_->List[ENTITIES_SELF_ID], &model);
 		}
 		else
@@ -508,7 +511,8 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 }
 
 static struct ChatCommand MarioClientCmd = {
-	"Mario64", OnMarioClientCmd, false,
+	"Mario64", OnMarioClientCmd,
+	0,
 	{
 		"&a/client mario64 <option>",
 		"&eAvailable options:",
@@ -584,85 +588,85 @@ bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget, bool* moreBelo
 	BlockID front =		World_SafeGetBlock(x-1, y, z);
 
 	// block ground face
-	if (!up || !isBlockSolid(up) || Blocks_->MinBB[up].Y != 0 || Blocks_->MinBB[up].X != 0 || Blocks_->MaxBB[up].X != 1 || Blocks_->MinBB[up].Z != 0 || Blocks_->MaxBB[up].Z != 1)
+	if (!up || !isBlockSolid(up) || Blocks_->MinBB[up].y != 0 || Blocks_->MinBB[up].x != 0 || Blocks_->MaxBB[up].x != 1 || Blocks_->MinBB[up].z != 0 || Blocks_->MaxBB[up].z != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Min->X * IMARIO_SCALE; 	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Min->x * IMARIO_SCALE; 	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// left (Z+)
-	if (!left || !isBlockSolid(left) || Blocks_->MinBB[left].Z != 0 || Blocks_->MinBB[left].X != 0 || Blocks_->MaxBB[left].X != 1 || Blocks_->MinBB[left].Y != 0 || Blocks_->MaxBB[left].Y != 1)
+	if (!left || !isBlockSolid(left) || Blocks_->MinBB[left].z != 0 || Blocks_->MinBB[left].x != 0 || Blocks_->MaxBB[left].x != 1 || Blocks_->MinBB[left].y != 0 || Blocks_->MaxBB[left].y != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Max->z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// right (Z-)
-	if (!right || !isBlockSolid(right) || Blocks_->MaxBB[right].Z != 1 || Blocks_->MinBB[right].X != 0 || Blocks_->MaxBB[right].X != 1 || Blocks_->MinBB[right].Y != 0 || Blocks_->MaxBB[right].Y != 1)
+	if (!right || !isBlockSolid(right) || Blocks_->MaxBB[right].z != 1 || Blocks_->MinBB[right].x != 0 || Blocks_->MaxBB[right].x != 1 || Blocks_->MinBB[right].y != 0 || Blocks_->MaxBB[right].y != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Min->z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// back (X+)
-	if (!back || !isBlockSolid(back) || Blocks_->MinBB[back].X != 0 || Blocks_->MinBB[back].Y != 0 || Blocks_->MaxBB[back].Y != 1 || Blocks_->MinBB[back].Z != 0 || Blocks_->MaxBB[back].Z != 1)
+	if (!back || !isBlockSolid(back) || Blocks_->MinBB[back].x != 0 || Blocks_->MinBB[back].y != 0 || Blocks_->MaxBB[back].y != 1 || Blocks_->MinBB[back].z != 0 || Blocks_->MaxBB[back].z != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// front (X-)
-	if (!front || !isBlockSolid(front) || Blocks_->MaxBB[back].X != 1 || Blocks_->MinBB[front].Y != 0 || Blocks_->MaxBB[front].Y != 1 || Blocks_->MinBB[front].Z != 0 || Blocks_->MaxBB[front].Z != 1)
+	if (!front || !isBlockSolid(front) || Blocks_->MaxBB[back].x != 1 || Blocks_->MinBB[front].y != 0 || Blocks_->MaxBB[front].y != 1 || Blocks_->MinBB[front].z != 0 || Blocks_->MaxBB[front].z != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Min->z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Max->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Max->z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
 
 	// block bottom face
-	if (!down || !isBlockSolid(down) || Blocks_->MaxBB[down].Y != 1 || Blocks_->MinBB[down].X != 0 || Blocks_->MaxBB[down].X != 1 || Blocks_->MinBB[down].Z != 0 || Blocks_->MaxBB[down].Z != 1)
+	if (!down || !isBlockSolid(down) || Blocks_->MaxBB[down].y != 1 || Blocks_->MinBB[down].x != 0 || Blocks_->MaxBB[down].x != 1 || Blocks_->MinBB[down].z != 0 || Blocks_->MaxBB[down].z != 1)
 	{
-		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[0][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[0][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[1][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[1][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+0].vertices[2][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+0].vertices[2][2] = Max->z * IMARIO_SCALE;
 
-		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->Z * IMARIO_SCALE;
-		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Min->X * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->Y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->Z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[0][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[0][2] = Min->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[1][0] = Max->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[1][2] = Max->z * IMARIO_SCALE;
+		obj.surfaces[obj.surfaceCount+1].vertices[2][0] = Min->x * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][1] = Min->y * IMARIO_SCALE;	obj.surfaces[obj.surfaceCount+1].vertices[2][2] = Min->z * IMARIO_SCALE;
 
 		obj.surfaceCount += 2;
 	}
@@ -708,7 +712,7 @@ bool addBlock(int x, int y, int z, int *i, uint32_t *arrayTarget, bool* moreBelo
 	if (obj.surfaceCount)
 		arrayTarget[(*i)++] = sm64_surface_object_create(&obj);
 
-	if (moreBelow) *moreBelow = (Min->X != 0 || Max->X != 1 || Min->Z != 0 || Max->Z != 1);
+	if (moreBelow) *moreBelow = (Min->x != 0 || Max->x != 1 || Min->z != 0 || Max->z != 1);
 	free(obj.surfaces);
 	return true;
 }
@@ -742,12 +746,12 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 			if (xadd == 0 && zadd == 0)
 			{
 				BlockID rope = World_SafeGetBlock(x, y, z);
-				if (Blocks_->Collide[rope] == COLLIDE_CLIMB_ROPE)
+				if (Blocks_->Collide[rope] == COLLIDE_CLIMB)
 				{
 					int height = 0, bottom = 0;
-					while (Blocks_->Collide[World_SafeGetBlock(x, y-bottom-1, z)] == COLLIDE_CLIMB_ROPE)
+					while (Blocks_->Collide[World_SafeGetBlock(x, y-bottom-1, z)] == COLLIDE_CLIMB)
 						bottom++;
-					while (Blocks_->Collide[World_SafeGetBlock(x, y-bottom+height+1, z)] == COLLIDE_CLIMB_ROPE)
+					while (Blocks_->Collide[World_SafeGetBlock(x, y-bottom+height+1, z)] == COLLIDE_CLIMB)
 						height++;
 
 					if (marioInstances[i])
@@ -757,9 +761,9 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 						{
 							sm64_set_mario_pole(obj->ID, (x*MARIO_SCALE+(MARIO_SCALE/2)), (y-bottom)*MARIO_SCALE, (z*MARIO_SCALE+(MARIO_SCALE/2)), height*MARIO_SCALE);
 
-							float xdist = fabs((x*MARIO_SCALE+(MARIO_SCALE/2)) - obj->currPos.X);
-							float zdist = fabs((z*MARIO_SCALE+(MARIO_SCALE/2)) - obj->currPos.Z);
-							if ((obj->state.action & ACT_FLAG_AIR) && (obj->lastPoleHeight != height || obj->lastPole.X != x || obj->lastPole.Y != y-bottom || obj->lastPole.Z != z) && xdist < 48 && zdist < 48)
+							float xdist = fabs((x*MARIO_SCALE+(MARIO_SCALE/2)) - obj->currPos.x);
+							float zdist = fabs((z*MARIO_SCALE+(MARIO_SCALE/2)) - obj->currPos.z);
+							if ((obj->state.action & ACT_FLAG_AIR) && (obj->lastPoleHeight != height || obj->lastPole.x != x || obj->lastPole.y != y-bottom || obj->lastPole.z != z) && xdist < 48 && zdist < 48)
 							{
 								obj->lastPole = (Vec3){x, y-bottom, z};
 								obj->lastPoleHeight = height;
@@ -802,21 +806,21 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 					};
 				}
 
-				if (mario->debuggerVertices[vCount+0].X == mario->debuggerVertices[vCount+1].X &&
-				    mario->debuggerVertices[vCount+1].X == mario->debuggerVertices[vCount+2].X &&
-					mario->debuggerVertices[vCount+0].X == mario->debuggerVertices[vCount+2].X) // X is red
+				if (mario->debuggerVertices[vCount+0].x == mario->debuggerVertices[vCount+1].x &&
+				    mario->debuggerVertices[vCount+1].x == mario->debuggerVertices[vCount+2].x &&
+					mario->debuggerVertices[vCount+0].x == mario->debuggerVertices[vCount+2].x) // X is red
 				{
 					mario->debuggerVertices[vCount].Col = mario->debuggerVertices[vCount+1].Col = mario->debuggerVertices[vCount+2].Col = PackedCol_Make(bgr?0:255, 0, bgr?255:0, 255);
 				}
-				else if (mario->debuggerVertices[vCount+0].Y == mario->debuggerVertices[vCount+1].Y &&
-				         mario->debuggerVertices[vCount+1].Y == mario->debuggerVertices[vCount+2].Y &&
-					     mario->debuggerVertices[vCount+0].Y == mario->debuggerVertices[vCount+2].Y) // Y is green
+				else if (mario->debuggerVertices[vCount+0].y == mario->debuggerVertices[vCount+1].y &&
+				         mario->debuggerVertices[vCount+1].y == mario->debuggerVertices[vCount+2].y &&
+					     mario->debuggerVertices[vCount+0].y == mario->debuggerVertices[vCount+2].y) // Y is green
 				{
 					mario->debuggerVertices[vCount].Col = mario->debuggerVertices[vCount+1].Col = mario->debuggerVertices[vCount+2].Col = PackedCol_Make(0, 255, 0, 255);
 				}
-				else if (mario->debuggerVertices[vCount+0].Z == mario->debuggerVertices[vCount+1].Z &&
-				         mario->debuggerVertices[vCount+1].Z == mario->debuggerVertices[vCount+2].Z &&
-					     mario->debuggerVertices[vCount+0].Z == mario->debuggerVertices[vCount+2].Z) // Y is green
+				else if (mario->debuggerVertices[vCount+0].z == mario->debuggerVertices[vCount+1].z &&
+				         mario->debuggerVertices[vCount+1].z == mario->debuggerVertices[vCount+2].z &&
+					     mario->debuggerVertices[vCount+0].z == mario->debuggerVertices[vCount+2].z) // Y is green
 				{
 					mario->debuggerVertices[vCount].Col = mario->debuggerVertices[vCount+1].Col = mario->debuggerVertices[vCount+2].Col = PackedCol_Make(bgr?255:0, 0, bgr?0:255, 255);
 				}
@@ -832,16 +836,16 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 }
 
 // custom callback for mario VTABLE
-void marioSetLocation(struct Entity* e, struct LocationUpdate* update, cc_bool interpolate)
+void marioSetLocation(struct Entity* e, struct LocationUpdate* update)
 {
 	for (int i=0; i<256; i++)
 	{
 		if (Entities_->List[i] && Entities_->List[i] == e && marioInstances[i])
 		{
-			marioInstances[i]->OriginalVTABLE->SetLocation(e, update, interpolate);
+			marioInstances[i]->OriginalVTABLE->SetLocation(e, update);
 
-			if (update->Flags & LOCATIONUPDATE_POS)
-				sm64_set_mario_position(marioInstances[i]->ID, update->Pos.X*MARIO_SCALE, update->Pos.Y*MARIO_SCALE, update->Pos.Z*MARIO_SCALE);
+			if (update->flags & LU_HAS_POS)
+				sm64_set_mario_position(marioInstances[i]->ID, update->pos.x*MARIO_SCALE, update->pos.y*MARIO_SCALE, update->pos.z*MARIO_SCALE);
 
 			break;
 		}
@@ -865,8 +869,8 @@ void marioTick(struct ScheduledTask* task)
 			// spawn mario. have some temporary variables for the surface IDs and mario ID
 			uint32_t surfaces[MAX_SURFACES];
 			memset(surfaces, -1, sizeof(surfaces));
-			loadNewBlocks(i, Entities_->List[i]->Position.X, Entities_->List[i]->Position.Y, Entities_->List[i]->Position.Z, surfaces);
-			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, (i == ENTITIES_SELF_ID));
+			loadNewBlocks(i, Entities_->List[i]->Position.x, Entities_->List[i]->Position.y, Entities_->List[i]->Position.z, surfaces);
+			int32_t ID = sm64_mario_create(Entities_->List[i]->Position.x*IMARIO_SCALE, Entities_->List[i]->Position.y*IMARIO_SCALE, Entities_->List[i]->Position.z*IMARIO_SCALE, (i == ENTITIES_SELF_ID));
 			if (ID == -1)
 			{
 				if (i == ENTITIES_SELF_ID) SendChat("&cFailed to spawn Mario", NULL, NULL, NULL, NULL);
@@ -874,14 +878,14 @@ void marioTick(struct ScheduledTask* task)
 			else
 			{
 				// mario was spawned, intialize the instance struct and put everything in there
-				printf("create mario %d at %.2f %.2f %.2f (%.2f %.2f %.2f)\n", i, Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE, Entities_->List[i]->Position.X, Entities_->List[i]->Position.Y, Entities_->List[i]->Position.Z);
+				printf("create mario %d at %.2f %.2f %.2f (%.2f %.2f %.2f)\n", i, Entities_->List[i]->Position.x*IMARIO_SCALE, Entities_->List[i]->Position.y*IMARIO_SCALE, Entities_->List[i]->Position.z*IMARIO_SCALE, Entities_->List[i]->Position.x, Entities_->List[i]->Position.y, Entities_->List[i]->Position.z);
 				sm64_set_mario_faceangle(ID, (int16_t)((-Entities_->List[i]->Yaw + 180) / 180 * 32768.0f));
 				marioInstances[i] = (struct MarioInstance*)malloc(sizeof(struct MarioInstance));
 				marioInstances[i]->ID = ID;
 				memcpy(&marioInstances[i]->surfaces, surfaces, sizeof(surfaces));
-				marioInstances[i]->lastPos.X = marioInstances[i]->currPos.X = Entities_->List[i]->Position.X*IMARIO_SCALE;
-				marioInstances[i]->lastPos.Y = marioInstances[i]->currPos.Y = Entities_->List[i]->Position.Y*IMARIO_SCALE;
-				marioInstances[i]->lastPos.Z = marioInstances[i]->currPos.Z = Entities_->List[i]->Position.Z*IMARIO_SCALE;
+				marioInstances[i]->lastPos.x = marioInstances[i]->currPos.x = Entities_->List[i]->Position.x*IMARIO_SCALE;
+				marioInstances[i]->lastPos.y = marioInstances[i]->currPos.y = Entities_->List[i]->Position.y*IMARIO_SCALE;
+				marioInstances[i]->lastPos.z = marioInstances[i]->currPos.z = Entities_->List[i]->Position.z*IMARIO_SCALE;
 				memset(&marioInstances[i]->input, 0, sizeof(struct SM64MarioInputs));
 				marioInstances[i]->geometry.position = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
 				marioInstances[i]->geometry.color    = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
@@ -917,7 +921,7 @@ void marioTick(struct ScheduledTask* task)
 				// (sorry Unk, but it had to be done)
 				marioInstances[i]->marioVTABLE = (const struct EntityVTABLE){
 					Entities_->List[i]->VTABLE->Tick, Entities_->List[i]->VTABLE->Despawn, marioSetLocation,
-					Entities_->List[i]->VTABLE->GetCol, Entities_->List[i]->VTABLE->RenderModel, Entities_->List[i]->VTABLE->RenderName
+					Entities_->List[i]->VTABLE->GetCol, Entities_->List[i]->VTABLE->RenderModel, Entities_->List[i]->VTABLE->ShouldRenderName
 				};
 				Entities_->List[i]->VTABLE = &marioInstances[i]->marioVTABLE;
 			}
@@ -949,25 +953,25 @@ void marioTick(struct ScheduledTask* task)
 
 			if (i != ENTITIES_SELF_ID)
 			{
-				Vec3 newPos = {Entities_->List[i]->Position.X*IMARIO_SCALE, Entities_->List[i]->Position.Y*IMARIO_SCALE, Entities_->List[i]->Position.Z*IMARIO_SCALE};
-				sm64_set_mario_position(obj->ID, newPos.X, newPos.Y, newPos.Z);
+				Vec3 newPos = {Entities_->List[i]->Position.x*IMARIO_SCALE, Entities_->List[i]->Position.y*IMARIO_SCALE, Entities_->List[i]->Position.z*IMARIO_SCALE};
+				sm64_set_mario_position(obj->ID, newPos.x, newPos.y, newPos.z);
 
 				if (!serverHasPlugin) // do local prediction on remote players when server does not have the plugin
 				{
 					if ((obj->state.action & ACT_GROUP_MASK) == ACT_GROUP_SUBMERGED)
 					{
 						// in water
-						obj->input.buttonA = (newPos.Z - obj->lastPos.Z) || (newPos.X - obj->lastPos.X);
+						obj->input.buttonA = (newPos.z - obj->lastPos.z) || (newPos.x - obj->lastPos.x);
 						if (obj->input.buttonA)
 						{
-							float angle = -atan2(newPos.Z - obj->lastPos.Z, newPos.X - obj->lastPos.X) + (MATH_PI/2);
+							float angle = -atan2(newPos.z - obj->lastPos.z, newPos.x - obj->lastPos.x) + (MATH_PI/2);
 							if (angle > MATH_PI) angle -= MATH_PI*2;
 							
 							obj->input.stickX =
 								(angle > obj->state.faceAngle) ? -1 :
 								(angle < obj->state.faceAngle) ? 1 :
 								0;
-							obj->input.stickY = clamp(newPos.Y - obj->lastPos.Y, -1, 1);
+							obj->input.stickY = clamp(newPos.y - obj->lastPos.y, -1, 1);
 						}
 						else
 							obj->input.stickX = obj->input.stickY = 0;
@@ -975,24 +979,24 @@ void marioTick(struct ScheduledTask* task)
 					else if (obj->state.action & ACT_FLAG_ON_POLE)
 					{
 						// climbing rope
-						float xdist = fabs(sm64_get_mario_pole_x(obj->ID) - newPos.X);
-						float zdist = fabs(sm64_get_mario_pole_z(obj->ID) - newPos.Z);
+						float xdist = fabs(sm64_get_mario_pole_x(obj->ID) - newPos.x);
+						float zdist = fabs(sm64_get_mario_pole_z(obj->ID) - newPos.z);
 
 						obj->input.buttonA = (xdist || zdist);
 						obj->input.stickX = 0;
 						obj->input.stickY = (obj->input.buttonA) ? 0 :
-							(newPos.Y - obj->lastPos.Y > 0) ? 1 :
-							(newPos.Y - obj->lastPos.Y < 0) ? -1 :
+							(newPos.y - obj->lastPos.y > 0) ? 1 :
+							(newPos.y - obj->lastPos.y < 0) ? -1 :
 							0;
 					}
 					else
 					{
-						obj->input.buttonA = (newPos.Y - obj->lastPos.Y > 0);
+						obj->input.buttonA = (newPos.y - obj->lastPos.y > 0);
 
-						bool moved = (newPos.Z - obj->lastPos.Z) || (newPos.X - obj->lastPos.X);
+						bool moved = (newPos.z - obj->lastPos.z) || (newPos.x - obj->lastPos.x);
 						if (moved)
 						{
-							float dir = atan2(newPos.Z - obj->lastPos.Z, newPos.X - obj->lastPos.X);
+							float dir = atan2(newPos.z - obj->lastPos.z, newPos.x - obj->lastPos.x);
 							obj->input.stickX = -Math_Cos(dir);
 							obj->input.stickY = -Math_Sin(dir);
 						}
@@ -1006,7 +1010,7 @@ void marioTick(struct ScheduledTask* task)
 			else if (i == ENTITIES_SELF_ID) // you
 			{
 				marioInterpTicks = 0;
-				obj->lastPos.X = obj->state.position[0]; obj->lastPos.Y = obj->state.position[1]; obj->lastPos.Z = obj->state.position[2];
+				obj->lastPos.x = obj->state.position[0]; obj->lastPos.y = obj->state.position[1]; obj->lastPos.z = obj->state.position[2];
 				if (pluginOptions[PLUGINOPTION_INTERP].value.on)
 				{
 					for (int j=0; j<3 * SM64_GEO_MAX_TRIANGLES; j++)
@@ -1032,9 +1036,9 @@ void marioTick(struct ScheduledTask* task)
 			sm64_set_mario_water_level(obj->ID, waterY*IMARIO_SCALE+IMARIO_SCALE);
 
 			sm64_mario_tick(obj->ID, &obj->input, &obj->state, &obj->geometry);
-			obj->currPos.X = obj->state.position[0];
-			obj->currPos.Y = obj->state.position[1];
-			obj->currPos.Z = obj->state.position[2];
+			obj->currPos.x = obj->state.position[0];
+			obj->currPos.y = obj->state.position[1];
+			obj->currPos.z = obj->state.position[2];
 			if (i == ENTITIES_SELF_ID) sendMarioTick();
 
 			obj->numTexturedTriangles = 0;
@@ -1044,9 +1048,9 @@ void marioTick(struct ScheduledTask* task)
 			PackedCol lightCol = (Lighting_) ? Lighting_->Color(obj->state.position[0]/MARIO_SCALE, obj->state.position[1]/MARIO_SCALE, obj->state.position[2]/MARIO_SCALE) : Env_->SunCol;
 
 			float scales[3] = {
-				Entities_->List[i]->ModelScale.X / MARIO_SCALE,
-				Entities_->List[i]->ModelScale.Y / MARIO_SCALE,
-				Entities_->List[i]->ModelScale.Z / MARIO_SCALE
+				Entities_->List[i]->ModelScale.x / MARIO_SCALE,
+				Entities_->List[i]->ModelScale.y / MARIO_SCALE,
+				Entities_->List[i]->ModelScale.z / MARIO_SCALE
 			};
 
 			for (int j=0; j<obj->geometry.numTrianglesUsed; j++)
@@ -1104,13 +1108,13 @@ void marioTick(struct ScheduledTask* task)
 					for (int k=0; k<4; k++)
 					{
 						obj->texturedVertices[obj->numTexturedTriangles*4+k] = (struct VertexTextured) {
-							obj->vertices[j*4+k].X, obj->vertices[j*4+k].Y, obj->vertices[j*4+k].Z,
+							obj->vertices[j*4+k].x, obj->vertices[j*4+k].y, obj->vertices[j*4+k].z,
 							PackedCol_Tint(PACKEDCOL_WHITE, lightCol),
 							obj->geometry.uv[j*6+(k*2+0)], obj->geometry.uv[j*6+(k*2+1)]
 						};
 
 						if (k<3 && i == ENTITIES_SELF_ID) // interpolation
-							obj->currTexturedGeom[obj->numTexturedTriangles*3+k] = (Vec3){obj->texturedVertices[obj->numTexturedTriangles*4+k].X, obj->texturedVertices[obj->numTexturedTriangles*4+k].Y, obj->texturedVertices[obj->numTexturedTriangles*4+k].Z};
+							obj->currTexturedGeom[obj->numTexturedTriangles*3+k] = (Vec3){obj->texturedVertices[obj->numTexturedTriangles*4+k].x, obj->texturedVertices[obj->numTexturedTriangles*4+k].y, obj->texturedVertices[obj->numTexturedTriangles*4+k].z};
 					}
 
 					obj->numTexturedTriangles++;
@@ -1119,15 +1123,15 @@ void marioTick(struct ScheduledTask* task)
 				if (i == ENTITIES_SELF_ID) // interpolation
 				{
 					for (int k=0; k<3; k++)
-						obj->currGeom[j*3+k] = (Vec3){obj->vertices[j*4+k].X, obj->vertices[j*4+k].Y, obj->vertices[j*4+k].Z};
+						obj->currGeom[j*3+k] = (Vec3){obj->vertices[j*4+k].x, obj->vertices[j*4+k].y, obj->vertices[j*4+k].z};
 				}
 			}
 			Gfx_SetDynamicVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
 			Gfx_SetDynamicVbData(obj->texturedVertexID, &obj->texturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
 
-			//if ((int)(obj->lastPos.X) != (int)(obj->currPos.X) || (int)(obj->lastPos.Y) != (int)(obj->currPos.Y) || (int)(obj->lastPos.Z) != (int)(obj->currPos.Z))
+			//if ((int)(obj->lastPos.x) != (int)(obj->currPos.x) || (int)(obj->lastPos.y) != (int)(obj->currPos.y) || (int)(obj->lastPos.z) != (int)(obj->currPos.z))
 			//{
-				loadNewBlocks(i, obj->currPos.X/MARIO_SCALE, obj->currPos.Y/MARIO_SCALE, obj->currPos.Z/MARIO_SCALE, obj->surfaces);
+				loadNewBlocks(i, obj->currPos.x/MARIO_SCALE, obj->currPos.y/MARIO_SCALE, obj->currPos.z/MARIO_SCALE, obj->surfaces);
 			//}
 		}
 	}
@@ -1141,30 +1145,30 @@ void selfMarioTick(struct ScheduledTask* task)
 	if (pluginOptions[PLUGINOPTION_INTERP].value.on && waitBeforeInterp <= 0)
 	{
 		// interpolate position and mesh
-		obj->state.position[0] = obj->lastPos.X + ((obj->currPos.X - obj->lastPos.X) * (marioInterpTicks / (1.f/30)));
-		obj->state.position[1] = obj->lastPos.Y + ((obj->currPos.Y - obj->lastPos.Y) * (marioInterpTicks / (1.f/30)));
-		obj->state.position[2] = obj->lastPos.Z + ((obj->currPos.Z - obj->lastPos.Z) * (marioInterpTicks / (1.f/30)));
+		obj->state.position[0] = obj->lastPos.x + ((obj->currPos.x - obj->lastPos.x) * (marioInterpTicks / (1.f/30)));
+		obj->state.position[1] = obj->lastPos.y + ((obj->currPos.y - obj->lastPos.y) * (marioInterpTicks / (1.f/30)));
+		obj->state.position[2] = obj->lastPos.z + ((obj->currPos.z - obj->lastPos.z) * (marioInterpTicks / (1.f/30)));
 
 		for (int i=0; i<obj->geometry.numTrianglesUsed; i++)
 		{
 			for (int j=0; j<3; j++)
 			{
-				obj->vertices[i*4+j].X = obj->lastGeom[i*3+j].X + ((obj->currGeom[i*3+j].X - obj->lastGeom[i*3+j].X) * (marioInterpTicks / (1.f/30)));
-				obj->vertices[i*4+j].Y = obj->lastGeom[i*3+j].Y + ((obj->currGeom[i*3+j].Y - obj->lastGeom[i*3+j].Y) * (marioInterpTicks / (1.f/30)));
-				obj->vertices[i*4+j].Z = obj->lastGeom[i*3+j].Z + ((obj->currGeom[i*3+j].Z - obj->lastGeom[i*3+j].Z) * (marioInterpTicks / (1.f/30)));
+				obj->vertices[i*4+j].x = obj->lastGeom[i*3+j].x + ((obj->currGeom[i*3+j].x - obj->lastGeom[i*3+j].x) * (marioInterpTicks / (1.f/30)));
+				obj->vertices[i*4+j].y = obj->lastGeom[i*3+j].y + ((obj->currGeom[i*3+j].y - obj->lastGeom[i*3+j].y) * (marioInterpTicks / (1.f/30)));
+				obj->vertices[i*4+j].z = obj->lastGeom[i*3+j].z + ((obj->currGeom[i*3+j].z - obj->lastGeom[i*3+j].z) * (marioInterpTicks / (1.f/30)));
 
-				obj->texturedVertices[i*4+j].X = obj->lastTexturedGeom[i*3+j].X + ((obj->currTexturedGeom[i*3+j].X - obj->lastTexturedGeom[i*3+j].X) * (marioInterpTicks / (1.f/30)));
-				obj->texturedVertices[i*4+j].Y = obj->lastTexturedGeom[i*3+j].Y + ((obj->currTexturedGeom[i*3+j].Y - obj->lastTexturedGeom[i*3+j].Y) * (marioInterpTicks / (1.f/30)));
-				obj->texturedVertices[i*4+j].Z = obj->lastTexturedGeom[i*3+j].Z + ((obj->currTexturedGeom[i*3+j].Z - obj->lastTexturedGeom[i*3+j].Z) * (marioInterpTicks / (1.f/30)));
+				obj->texturedVertices[i*4+j].x = obj->lastTexturedGeom[i*3+j].x + ((obj->currTexturedGeom[i*3+j].x - obj->lastTexturedGeom[i*3+j].x) * (marioInterpTicks / (1.f/30)));
+				obj->texturedVertices[i*4+j].y = obj->lastTexturedGeom[i*3+j].y + ((obj->currTexturedGeom[i*3+j].y - obj->lastTexturedGeom[i*3+j].y) * (marioInterpTicks / (1.f/30)));
+				obj->texturedVertices[i*4+j].z = obj->lastTexturedGeom[i*3+j].z + ((obj->currTexturedGeom[i*3+j].z - obj->lastTexturedGeom[i*3+j].z) * (marioInterpTicks / (1.f/30)));
 			}
 
-			obj->vertices[i*4+3].X = obj->vertices[i*4+2].X;
-			obj->vertices[i*4+3].Y = obj->vertices[i*4+2].Y;
-			obj->vertices[i*4+3].Z = obj->vertices[i*4+2].Z;
+			obj->vertices[i*4+3].x = obj->vertices[i*4+2].x;
+			obj->vertices[i*4+3].y = obj->vertices[i*4+2].y;
+			obj->vertices[i*4+3].z = obj->vertices[i*4+2].z;
 
-			obj->texturedVertices[i*4+3].X = obj->texturedVertices[i*4+2].X;
-			obj->texturedVertices[i*4+3].Y = obj->texturedVertices[i*4+2].Y;
-			obj->texturedVertices[i*4+3].Z = obj->texturedVertices[i*4+2].Z;
+			obj->texturedVertices[i*4+3].x = obj->texturedVertices[i*4+2].x;
+			obj->texturedVertices[i*4+3].y = obj->texturedVertices[i*4+2].y;
+			obj->texturedVertices[i*4+3].z = obj->texturedVertices[i*4+2].z;
 		}
 		Gfx_SetDynamicVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
 		Gfx_SetDynamicVbData(obj->texturedVertexID, &obj->texturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
@@ -1174,24 +1178,23 @@ void selfMarioTick(struct ScheduledTask* task)
 	else
 	{
 		if (waitBeforeInterp > 0) waitBeforeInterp--;
-		obj->state.position[0] = obj->currPos.X;
-		obj->state.position[1] = obj->currPos.Y;
-		obj->state.position[2] = obj->currPos.Z;
+		obj->state.position[0] = obj->currPos.x;
+		obj->state.position[1] = obj->currPos.y;
+		obj->state.position[2] = obj->currPos.z;
 	}
 
 	struct LocationUpdate update = {0};
-	update.Flags = LOCATIONUPDATE_POS;
-	update.Pos.X = obj->state.position[0] / MARIO_SCALE;
-	update.Pos.Y = obj->state.position[1] / MARIO_SCALE;
-	update.Pos.Z = obj->state.position[2] / MARIO_SCALE;
-	update.RelativePos = false;
+	update.flags = LU_HAS_POS;
+	update.pos.x = obj->state.position[0] / MARIO_SCALE;
+	update.pos.y = obj->state.position[1] / MARIO_SCALE;
+	update.pos.z = obj->state.position[2] / MARIO_SCALE;
 	if (pluginOptions[PLUGINOPTION_CAMERA].value.on)
 	{
-		update.Flags |= LOCATIONUPDATE_YAW;
-		update.Yaw = Math_LerpAngle(Entities_->List[ENTITIES_SELF_ID]->Yaw, ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG), 0.03f);
+		update.flags |= LU_HAS_YAW;
+		update.yaw = Math_LerpAngle(Entities_->List[ENTITIES_SELF_ID]->Yaw, ((-obj->state.faceAngle + MATH_PI) * MATH_RAD2DEG), 0.03f);
 	}
-	obj->OriginalVTABLE->SetLocation(Entities_->List[ENTITIES_SELF_ID], &update, false);
-	Entities_->List[ENTITIES_SELF_ID]->Velocity.X = Entities_->List[ENTITIES_SELF_ID]->Velocity.Y = Entities_->List[ENTITIES_SELF_ID]->Velocity.Z = 0;
+	obj->OriginalVTABLE->SetLocation(Entities_->List[ENTITIES_SELF_ID], &update);
+	Entities_->List[ENTITIES_SELF_ID]->Velocity.x = Entities_->List[ENTITIES_SELF_ID]->Velocity.y = Entities_->List[ENTITIES_SELF_ID]->Velocity.z = 0;
 
 	if (Gui_->InputGrab) // menu is open
 	{
@@ -1201,42 +1204,42 @@ void selfMarioTick(struct ScheduledTask* task)
 
 	float dir = 0;
 	float spd = 0;
-	if (KeyBind_IsPressed(KEYBIND_FORWARD) && KeyBind_IsPressed(KEYBIND_RIGHT))
+	if (KeyBind_IsPressed(BIND_FORWARD) && KeyBind_IsPressed(BIND_RIGHT))
 	{
 		dir = -MATH_PI * 0.25f;
 		spd = 1;
 	}
-	else if (KeyBind_IsPressed(KEYBIND_FORWARD) && KeyBind_IsPressed(KEYBIND_LEFT))
+	else if (KeyBind_IsPressed(BIND_FORWARD) && KeyBind_IsPressed(BIND_LEFT))
 	{
 		dir = -MATH_PI * 0.75f;
 		spd = 1;
 	}
-	else if (KeyBind_IsPressed(KEYBIND_BACK) && KeyBind_IsPressed(KEYBIND_RIGHT))
+	else if (KeyBind_IsPressed(BIND_BACK) && KeyBind_IsPressed(BIND_RIGHT))
 	{
 		dir = MATH_PI * 0.25f;
 		spd = 1;
 	}
-	else if (KeyBind_IsPressed(KEYBIND_BACK) && KeyBind_IsPressed(KEYBIND_LEFT))
+	else if (KeyBind_IsPressed(BIND_BACK) && KeyBind_IsPressed(BIND_LEFT))
 	{
 		dir = MATH_PI * 0.75f;
 		spd = 1;
 	}
-	else if (KeyBind_IsPressed(KEYBIND_FORWARD))
+	else if (KeyBind_IsPressed(BIND_FORWARD))
 	{
 		dir = -MATH_PI * 0.5f;
 		spd = 1;
 	}
-	else if (KeyBind_IsPressed(KEYBIND_BACK))
+	else if (KeyBind_IsPressed(BIND_BACK))
 	{
 		dir = MATH_PI * 0.5f;
 		spd = 1;
 	}
-	else if (KeyBind_IsPressed(KEYBIND_LEFT))
+	else if (KeyBind_IsPressed(BIND_LEFT))
 	{
 		dir = MATH_PI;
 		spd = 1;
 	}
-	else if (KeyBind_IsPressed(KEYBIND_RIGHT))
+	else if (KeyBind_IsPressed(BIND_RIGHT))
 	{
 		dir = 0;
 		spd = 1;
@@ -1246,13 +1249,13 @@ void selfMarioTick(struct ScheduledTask* task)
 	obj->input.stickY = Math_Sin(dir) * spd;
 	if (Camera_->Active->isThirdPerson)
 	{
-		obj->input.camLookX = (update.Pos.X - Camera_->CurrentPos.X);
-		obj->input.camLookZ = (update.Pos.Z - Camera_->CurrentPos.Z);
+		obj->input.camLookX = (update.pos.x - Camera_->CurrentPos.x);
+		obj->input.camLookZ = (update.pos.z - Camera_->CurrentPos.z);
 	}
 	else
 	{
-		obj->input.camLookX = (update.Pos.X - Camera_->CurrentPos.X) + (Math_Sin((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
-		obj->input.camLookZ = (update.Pos.Z - Camera_->CurrentPos.Z) + (Math_Cos((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
+		obj->input.camLookX = (update.pos.x - Camera_->CurrentPos.x) + (Math_Sin((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
+		obj->input.camLookZ = (update.pos.z - Camera_->CurrentPos.z) + (Math_Cos((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
 	}
 
 	if (obj->state.action & ACT_FLAG_ON_POLE)
@@ -1263,12 +1266,12 @@ void selfMarioTick(struct ScheduledTask* task)
 		obj->input.stickY *= -1;
 	}
 
-	obj->input.buttonA = KeyBind_IsPressed(KEYBIND_JUMP);
+	obj->input.buttonA = KeyBind_IsPressed(BIND_JUMP);
 	// Z and B buttons are managed in Classic64_events.c
 	/*
-	Entities_->List[ENTITIES_SELF_ID]->Position.X = marioState.position[0];
-	Entities_->List[ENTITIES_SELF_ID]->Position.Y = marioState.position[1];
-	Entities_->List[ENTITIES_SELF_ID]->Position.Z = marioState.position[2];
+	Entities_->List[ENTITIES_SELF_ID]->Position.x = marioState.position[0];
+	Entities_->List[ENTITIES_SELF_ID]->Position.y = marioState.position[1];
+	Entities_->List[ENTITIES_SELF_ID]->Position.z = marioState.position[2];
 	*/
 }
 
@@ -1382,8 +1385,9 @@ static void Classic64_Init()
 
 	Model_Register(marioModel_GetInstance());
 	Event_Register_(&ChatEvents_->ChatReceived, NULL, OnChatMessage);
-	Event_Register_(&InputEvents_->Down, NULL, OnKeyDown);
-	Event_Register_(&InputEvents_->Up, NULL, OnKeyUp);
+	Event_Register_(&UserEvents_->HackPermsChanged, NULL, OnHacksChanged);
+	Event_Register_(&InputEvents_->_down, NULL, OnKeyDown);
+	Event_Register_(&InputEvents_->_up, NULL, OnKeyUp);
 	Event_Register_(&GfxEvents_->ContextLost, NULL, OnContextLost);
 	Event_Register_(&GfxEvents_->ContextRecreated, NULL, OnContextRecreated);
 	Event_Register_(&NetEvents_->PluginMessageReceived, NULL, OnPluginMessage);
@@ -1468,9 +1472,9 @@ static void LoadSymbolsFromGame(void) {
 #ifdef CC_BUILD_WIN
 	HMODULE app = GetModuleHandle(NULL);
 #endif
-	LoadSymbol(Server); 
+	LoadSymbol(Server);
 	LoadSymbol(Blocks);
-	LoadSymbol(Models); 
+	LoadSymbol(Models);
 	LoadSymbol(Game);
 	LoadSymbol(World);
 	LoadSymbol(Env);
@@ -1479,6 +1483,7 @@ static void LoadSymbolsFromGame(void) {
 	LoadSymbol(Gui);
 	LoadSymbol(Lighting);
 	LoadSymbol(ChatEvents);
+	LoadSymbol(UserEvents);
 	LoadSymbol(GfxEvents);
 	LoadSymbol(InputEvents);
 	LoadSymbol(NetEvents);

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ClassiCube/Protocol.h"
+#include "../ClassiCube/src/Protocol.h"
 
 // from Stream.c
 cc_uint16 Stream_GetU16_BE(const cc_uint8* data) {
