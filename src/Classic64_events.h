@@ -1,9 +1,10 @@
 #ifndef CLASSIC64_EVENTS_H
 #define CLASSIC64_EVENTS_H
 
-#include "ClassiCube/String.h"
+#include "../ClassiCube/src/String.h"
 
 void OnChatMessage(void* obj, const cc_string* msg, int msgType);
+void OnHacksChanged(void* obj);
 void OnKeyDown(void* obj, int key, cc_bool repeating);
 void OnKeyUp(void* obj, int key);
 void OnContextLost(void* obj);

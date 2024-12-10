@@ -11,10 +11,10 @@
 #include "Classic64_settings.h"
 #include "libsm64.h"
 
-#include "ClassiCube/Bitmap.h"
-#include "ClassiCube/Entity.h"
-#include "ClassiCube/Graphics.h"
-#include "ClassiCube/Vectors.h"
+#include "../ClassiCube/src/Bitmap.h"
+#include "../ClassiCube/src/Entity.h"
+#include "../ClassiCube/src/Graphics.h"
+#include "../ClassiCube/src/Vectors.h"
 
 enum
 {

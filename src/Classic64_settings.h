@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "ClassiCube/String.h"
+#include "../ClassiCube/src/String.h"
 
 enum
 {

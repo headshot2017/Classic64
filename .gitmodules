@@ -1,0 +1,3 @@
+[submodule "ClassiCube"]
+	path = ClassiCube
+	url = https://github.com/ClassiCube/ClassiCube.git

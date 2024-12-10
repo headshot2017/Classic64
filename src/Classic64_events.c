@@ -3,9 +3,10 @@
 #include "Classic64.h"
 #include "Classic64_settings.h"
 
-#include "ClassiCube/Entity.h"
-#include "ClassiCube/Graphics.h"
-#include "ClassiCube/Protocol.h"
+#include "../ClassiCube/src/Entity.h"
+#include "../ClassiCube/src/Graphics.h"
+#include "../ClassiCube/src/Model.h"
+#include "../ClassiCube/src/Protocol.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +27,20 @@ void OnChatMessage(void* obj, const cc_string* msg, int msgType)
 			args[i] = args[i+1];
 
 		OnMarioClientCmd(args, argsCount-1);
+	}
+}
+
+void OnHacksChanged(void* obj)
+{
+	if (!marioInstances[ENTITIES_SELF_ID]) return;
+
+	struct LocalPlayer* p = Entities.CurPlayer;
+	struct HacksComp* hax = &p->Hacks;
+
+	if (!String_ContainsConst(&hax->HacksFlags, "+mario64") && (!hax->CanAnyHacks || !hax->CanFly))
+	{
+		cc_string humanModelName = String_FromReadonly(Models.Human->name);
+		Entity_SetModel(&p->Base, &humanModelName);
 	}
 }
 
