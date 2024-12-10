@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -23,6 +23,14 @@ jobs:
       - name: Install dependencies
         shell: msys2 {0}
         run: pacman --noconfirm -S mingw-w64-i686-SDL2 mingw-w64-i686-gcc make python3
+
+      - name: Generate libClassiCube.a
+        shell: msys2 {0}
+        run: |
+          wget https://cdn.classicube.net/client/release/win32/ClassiCube.zip
+          unzip -j ClassiCube.zip ClassiCube/ClassiCube.exe
+          gendef ClassiCube.exe
+          dlltool -d ClassiCube.def -l libClassiCube.a -D ClassiCube.exe
 
       - name: Compile debug and release
         shell: msys2 {0}
@@ -36,7 +44,7 @@ jobs:
           
 
       - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: classic64-windows-x86
           path: lib
@@ -46,7 +54,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -59,6 +67,14 @@ jobs:
         shell: msys2 {0}
         run: pacman --noconfirm -S mingw-w64-x86_64-SDL2 mingw-w64-x86_64-gcc make python3
 
+      - name: Generate libClassiCube.a
+        shell: msys2 {0}
+        run: |
+          wget https://cdn.classicube.net/client/release/win64/ClassiCube.zip
+          unzip -j ClassiCube.zip ClassiCube/ClassiCube.exe
+          gendef ClassiCube.exe
+          dlltool -d ClassiCube.def -l libClassiCube.a -D ClassiCube.exe
+
       - name: Compile debug and release
         shell: msys2 {0}
         run: |
@@ -70,7 +86,7 @@ jobs:
           cp dist/Classic64.dll lib/release
 
       - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: classic64-windows-x64
           path: lib
@@ -80,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -97,7 +113,7 @@ jobs:
           cp dist/libClassic64.so lib/release
 
       - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: classic64-linux-x64
           path: lib
@@ -114,7 +130,7 @@ jobs:
           apt-get update
           apt-get install -y build-essential git libssl-dev curl libsdl2-dev
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -128,17 +144,17 @@ jobs:
           cp dist/libClassic64.so lib/release
       
       - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: classic64-linux-x86
           path: lib
 
 
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-13
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -158,7 +174,7 @@ jobs:
           cp libClassic64.dylib lib/release
       
       - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: classic64-macos-intel64
           path: lib
