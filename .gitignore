@@ -6,3 +6,6 @@ run-test
 *.so
 compile_commands.json
 /.cache/
+*.a
+*.exe
+*.def
