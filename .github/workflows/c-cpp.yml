@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         shell: msys2 {0}
-        run: pacman --noconfirm -S mingw-w64-i686-SDL2 mingw-w64-i686-gcc make python3
+        run: pacman --noconfirm -S mingw-w64-i686-SDL2 mingw-w64-i686-gcc make python3 unzip
 
       - name: Generate libClassiCube.a
         shell: msys2 {0}
@@ -65,7 +65,7 @@ jobs:
 
       - name: Install dependencies
         shell: msys2 {0}
-        run: pacman --noconfirm -S mingw-w64-x86_64-SDL2 mingw-w64-x86_64-gcc make python3
+        run: pacman --noconfirm -S mingw-w64-x86_64-SDL2 mingw-w64-x86_64-gcc make python3 unzip
 
       - name: Generate libClassiCube.a
         shell: msys2 {0}
