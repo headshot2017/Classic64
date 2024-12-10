@@ -295,9 +295,9 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 	else if (String_Compare(&args[0], &options[3]) == 0) // force-switch to mario
 	{
 		struct HacksComp* hax = &Entities_->CurPlayer->Hacks;
-		if (!String_ContainsConst(&hax->HacksFlags, "+mario64") && !hax->CanFly)
+		if (String_ContainsConst(&hax->HacksFlags, "-mario64") || (!String_ContainsConst(&hax->HacksFlags, "+mario64") && !hax->CanFly))
 		{
-			SendChat("&cFlying is disabled here, cannot switch to Mario", NULL, NULL, NULL, NULL);
+			SendChat("&cMario is disabled here, cannot switch", NULL, NULL, NULL, NULL);
 			return;
 		}
 
@@ -1381,7 +1381,7 @@ static void Classic64_Init()
 		SendChat("&bHave fun playing as Mario!", NULL, NULL, NULL, NULL);
 	}
 
-	String_AppendConst(&Server_->AppName, " + Classic64 Mario64 v1.1");
+	String_AppendConst(&Server_->AppName, " + Classic64 Mario64 v1.2");
 
 	Model_Register(marioModel_GetInstance());
 	Event_Register_(&ChatEvents_->ChatReceived, NULL, OnChatMessage);
