@@ -72,7 +72,7 @@ namespace MCGalaxy
 			OnPlayerDisconnectEvent.Register(OnPlayerDisconnect, Priority.Critical);
 			OnJoinedLevelEvent.Register(OnJoinedLevel, Priority.Critical);
 			OnSentMapEvent.Register(OnSentMap, Priority.Critical);
-			OnSendingMotdEvent.Register(OnSendingMotd, Priority.Critical)
+			OnSendingMotdEvent.Register(OnSendingMotd, Priority.Critical);
 
 			ModelInfo.Models.Add(new ModelInfo("mario64", 10,10,10, 15));
 			marioTask = Server.Critical.QueueRepeat(marioTick, null, TimeSpan.FromSeconds(1.0/30));
@@ -211,6 +211,10 @@ namespace MCGalaxy
 			{
 				if (!marioSettings.ContainsKey(p.name) || !marioSettings[p.name].hasPlugin) continue;
 
+				string motd = p.GetMotd();
+				if (!CanSwitchToMario(p, ref motd) && p.Model.CaselessEq("mario64"))
+					p.UpdateModel("humanoid");
+
 				foreach (Player other in PlayerInfo.Online.Items)
 				{
 					if (!marioSettings.ContainsKey(other.name) || other.level != p.level || p == other || !marioSettings[other.name].hasPlugin) continue;
@@ -235,6 +239,30 @@ namespace MCGalaxy
 				}
 			}
 		}
+
+		static bool CanSwitchToMario(Player p, ref string motd)
+		{
+			string[] motdParts = motd.SplitSpaces();
+			bool mario64 = false;
+
+			for (int i=0; i<motdParts.Length; i++)
+			{
+				if (motdParts[i].CaselessEq("+mario64"))
+				{
+					mario64 = true;
+					break;
+				}
+
+				if (motdParts[i].CaselessEq("-mario64"))
+					return false;
+			}
+
+			if (!mario64 && !Hacks.CanUseFly(p))
+				return false;
+
+			return true;
+		}
+
 
 		// begin event callbacks
 
@@ -273,18 +301,7 @@ namespace MCGalaxy
 
 		void OnSendingMotd(Player p, ref string motd)
 		{
-			string[] motdParts = motd.SplitSpaces();
-			bool mario64 = false;
-			for (int i=0; i<motdParts.Length; i++)
-			{
-				if (motdParts[i].CaselessEq("+mario64"))
-				{
-					mario64 = true;
-					break;
-				}
-			}
-
-			if (!mario64 && Hacks.MakeHackControl(p, motd)[1] == 0)
+			if (!CanSwitchToMario(p, ref motd))
 				p.UpdateModel("humanoid");
 		}
 
@@ -321,20 +338,10 @@ namespace MCGalaxy
 
 				case MarioOpcodes.OPCODE_MARIO_FORCE:
 					{
-						string[] motdParts = p.GetMotd().SplitSpaces();
-						bool mario64 = false;
-						for (int i=0; i<motdParts.Length; i++)
+						string motd = p.GetMotd();
+						if (!CanSwitchToMario(p, ref motd))
 						{
-							if (motdParts[i].CaselessEq("+mario64"))
-							{
-								mario64 = true;
-								break;
-							}
-						}
-
-						if (!mario64 && !Hacks.CanUseFly(p))
-						{
-							p.Message("&cFlying is disabled here, cannot switch to Mario");
+							p.Message("&cMario is disabled here, cannot switch");
 							p.UpdateModel("humanoid");
 							return;
 						}
