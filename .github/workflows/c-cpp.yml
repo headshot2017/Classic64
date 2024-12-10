@@ -119,37 +119,6 @@ jobs:
           path: lib
 
 
-  build-linux-x86:
-    runs-on: ubuntu-20.04
-    container:
-      image: i386/ubuntu
-
-    steps:
-      - name: Install necessary packages
-        run: |
-          apt-get update
-          apt-get install --no-install-recommends -y build-essential git libssl-dev curl libsdl2-dev
-
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-
-      - name: Compile debug and release
-        run: |
-          mkdir lib lib/debug lib/release
-          make
-          cp dist/libClassic64.so lib/debug
-          make clean
-          make release
-          cp dist/libClassic64.so lib/release
-      
-      - name: Use the Upload Artifact GitHub Action
-        uses: actions/upload-artifact@v4
-        with:
-          name: classic64-linux-x86
-          path: lib
-
-
   build-macos:
     runs-on: macos-13
 
