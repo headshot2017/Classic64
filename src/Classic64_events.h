@@ -1,7 +1,7 @@
 #ifndef CLASSIC64_EVENTS_H
 #define CLASSIC64_EVENTS_H
 
-#include "../ClassiCube/src/String.h"
+#include "../ClassiCube/src/String_.h"
 
 void OnChatMessage(void* obj, const cc_string* msg, int msgType);
 void OnHacksChanged(void* obj);

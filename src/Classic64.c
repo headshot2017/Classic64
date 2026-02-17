@@ -1,13 +1,3 @@
-#ifdef _WIN32
-	#define CC_API __declspec(dllimport)
-	#define CC_VAR __declspec(dllimport)
-	#define EXPORT __declspec(dllexport)
-#else
-	#define CC_API
-	#define CC_VAR
-	#define EXPORT __attribute__((visibility("default")))
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,12 +8,16 @@
 #include "decomp/include/seq_ids.h"
 #include "sha1/sha1.h"
 
+// need to include this first
+#include "../ClassiCube/src/PluginAPI.h"
+
 #include "Classic64_events.h"
 #include "Classic64_settings.h"
 #include "Classic64_network.h"
 #include "Classic64_audio.h"
 #include "Classic64.h"
 
+#include "../ClassiCube/src/Audio.h"
 #include "../ClassiCube/src/Bitmap.h"
 #include "../ClassiCube/src/Block.h"
 #include "../ClassiCube/src/Camera.h"
@@ -1443,8 +1437,8 @@ static void Classic64_OnNewMapLoaded()
 	sm64_static_surfaces_load(surfaces, 2);
 }
 
-EXPORT int Plugin_ApiVersion = 1;
-EXPORT struct IGameComponent Plugin_Component = {
+PLUGIN_EXPORT int Plugin_ApiVersion = 1;
+PLUGIN_EXPORT struct IGameComponent Plugin_Component = {
 	Classic64_Init,
 	Classic64_Free,
 	Classic64_Reset,
