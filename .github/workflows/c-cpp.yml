@@ -92,6 +92,38 @@ jobs:
           path: lib
 
 
+  build-ubuntu-x86:
+    runs-on: ubuntu-22.04
+    env:
+      ENV_CFLAGS: -m32
+      ENV_LDFLAGS: -m32
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Enable i386 and install dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev:i386 gcc-multilib g++-multilib
+
+      - name: Compile debug and release
+        run: |
+          mkdir lib lib/debug lib/release
+          make
+          cp dist/libClassic64.so lib/debug
+          make clean
+          make release
+          cp dist/libClassic64.so lib/release
+
+      - name: Use the Upload Artifact GitHub Action
+        uses: actions/upload-artifact@v4
+        with:
+          name: classic64-ubuntu-x86
+          path: lib
+
   build-ubuntu-x64:
     runs-on: ubuntu-22.04
 

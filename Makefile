@@ -2,8 +2,8 @@ default: debug
 
 CC      := gcc
 CXX 	:= g++
-CFLAGS  := -Wall -Wno-incompatible-pointer-types -Wno-int-conversion -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS
-LDFLAGS := -lm -shared -lpthread
+CFLAGS  := -Wall -Wno-incompatible-pointer-types -Wno-int-conversion -fPIC -DSM64_LIB_EXPORT -DVERSION_US -DNO_SEGMENTED_MEMORY -DGBI_FLOATS $(ENV_CFLAGS)
+LDFLAGS := -lm -shared -lpthread $(ENV_LDFLAGS)
 ENDFLAGS := -fPIC -lSDL2
 
 DIST_DIR  := dist
