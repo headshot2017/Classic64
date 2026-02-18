@@ -132,6 +132,7 @@ jobs:
       - name: Compile SDL2
         run: |
           git clone https://github.com/libsdl-org/SDL --branch SDL2
+          cd SDL
           ./configure
           make
           sudo make install
