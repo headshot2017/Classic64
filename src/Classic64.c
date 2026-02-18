@@ -94,6 +94,8 @@ bool isBlockSolid(BlockID block)
 	return (block != 0 && (Blocks_->Collide[block] == COLLIDE_SOLID || Blocks_->ExtendedCollide[block] == COLLIDE_LAVA));
 }
 
+struct Camera* cam_thirdForward = 0;
+
 // mario variables
 uint8_t *marioTextureUint8;
 struct MarioInstance *marioInstances[256];
@@ -1241,15 +1243,14 @@ void selfMarioTick(struct ScheduledTask* task)
 
 	obj->input.stickX = Math_Cos(dir) * spd;
 	obj->input.stickY = Math_Sin(dir) * spd;
-	if (Camera_->Active->isThirdPerson)
+	if (Camera_->Active)
 	{
-		obj->input.camLookX = (update.pos.x - Camera_->CurrentPos.x);
-		obj->input.camLookZ = (update.pos.z - Camera_->CurrentPos.z);
-	}
-	else
-	{
-		obj->input.camLookX = (update.pos.x - Camera_->CurrentPos.x) + (Math_Sin((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
-		obj->input.camLookZ = (update.pos.z - Camera_->CurrentPos.z) + (Math_Cos((-Entities_->List[ENTITIES_SELF_ID]->Yaw + 180) * MATH_DEG2RAD));
+		float orientation = Camera_->Active->GetOrientation().x - (M_PI/2);
+		if (Camera_->Active == cam_thirdForward)
+			orientation -= M_PI;
+
+		obj->input.camLookX = cosf(orientation);
+		obj->input.camLookZ = sinf(orientation);
 	}
 
 	if (obj->state.action & ACT_FLAG_ON_POLE)
@@ -1389,6 +1390,9 @@ static void Classic64_Init()
 	ScheduledTask_Add(1./30, marioTick);
 	ScheduledTask_Add(1./300, selfMarioTick);
 	Commands_Register(&MarioClientCmd);
+
+	if (Camera_->Active)
+		cam_thirdForward = Camera_->Active->next->next;
 }
 
 static void Classic64_Free()
