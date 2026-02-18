@@ -956,7 +956,7 @@ void marioTick(struct ScheduledTask* task)
 						obj->input.buttonA = (newPos.z - obj->lastPos.z) || (newPos.x - obj->lastPos.x);
 						if (obj->input.buttonA)
 						{
-							float angle = -atan2(newPos.z - obj->lastPos.z, newPos.x - obj->lastPos.x) + (MATH_PI/2);
+							float angle = -atan2f(newPos.z - obj->lastPos.z, newPos.x - obj->lastPos.x) + (MATH_PI/2);
 							if (angle > MATH_PI) angle -= MATH_PI*2;
 							
 							obj->input.stickX =
@@ -988,7 +988,7 @@ void marioTick(struct ScheduledTask* task)
 						bool moved = (newPos.z - obj->lastPos.z) || (newPos.x - obj->lastPos.x);
 						if (moved)
 						{
-							float dir = atan2(newPos.z - obj->lastPos.z, newPos.x - obj->lastPos.x);
+							float dir = atan2f(newPos.z - obj->lastPos.z, newPos.x - obj->lastPos.x);
 							obj->input.stickX = -Math_Cos(dir);
 							obj->input.stickY = -Math_Sin(dir);
 						}
