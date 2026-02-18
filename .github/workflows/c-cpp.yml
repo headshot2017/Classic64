@@ -123,7 +123,7 @@ jobs:
     container: fedora:latest
     steps:
       - name: Install necessary packages
-        run: sudo dnf install git gcc g++ -y
+        run: sudo dnf install git gcc g++ python3 -y
 
       - uses: actions/checkout@v4
         with:
