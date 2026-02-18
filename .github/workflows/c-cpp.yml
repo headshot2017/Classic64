@@ -119,7 +119,7 @@ jobs:
           path: lib
 
   build-fedora-x64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container: fedora:latest
     steps:
       - uses: actions/checkout@v4
