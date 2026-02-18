@@ -122,14 +122,12 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora:latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Install git
-        run: |
-          sudo dnf install git -y
+        run: sudo dnf install git -y
 
-      - name: Update submodules
-        run: git submodule update --init --recursive
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Compile SDL2
         run: |
