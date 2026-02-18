@@ -122,8 +122,8 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora:latest
     steps:
-      - name: Install git
-        run: sudo dnf install git -y
+      - name: Install necessary packages
+        run: sudo dnf install git gcc g++ -y
 
       - uses: actions/checkout@v4
         with:
