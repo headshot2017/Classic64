@@ -388,12 +388,6 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 						}
 
 						SendChat("&a%s: %s", &pluginOptions[i].name, &args[2], NULL, NULL);
-						if (i == PLUGINOPTION_CUSTOM_COLORS)
-						{
-							struct RGBCol newColors[6];
-							for (int j=0; j<6; j++) newColors[j] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + j].value.col;
-							updateMarioColors(ENTITIES_SELF_ID, pluginOptions[i].value.on, newColors);
-						}
 						break;
 
 					case PLUGINOPTION_VALUE_NUMBER:
@@ -493,6 +487,8 @@ void OnMarioClientCmd(const cc_string* args, int argsCount)
 						SendChat("&a%s: %s, %s, %s", &pluginOptions[i].name, &args[2], &args[3], &args[4]);
 						break;
 				}
+
+				if (pluginOptions[i].onChange) pluginOptions[i].onChange(i);
 
 				saveSettings();
 				return;
@@ -1393,6 +1389,8 @@ static void Classic64_Init()
 
 	if (Camera_->Active)
 		cam_thirdForward = Camera_->Active->next->next;
+
+	sm64_set_sound_volume(pluginOptions[PLUGINOPTION_VOLUME].value.num.current / 100.f);
 }
 
 static void Classic64_Free()

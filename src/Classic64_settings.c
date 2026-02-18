@@ -3,8 +3,11 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include "libsm64.h"
+#include "Classic64.h"
 #include "Classic64_settings.h"
 #include "../ClassiCube/src/Core.h"
+#include "../ClassiCube/src/Entity.h"
 
 // from Input.h
 const char* keyNames[] = {"none",
@@ -59,21 +62,33 @@ const struct RGBCol defaultColors[] = {
 	{114, 28 , 14 }, // Shoes
 };
 
+static void onToggleColors(int option)
+{
+	struct RGBCol newColors[6];
+	for (int j=0; j<6; j++) newColors[j] = pluginOptions[PLUGINOPTION_COLOR_OVERALLS + j].value.col;
+	updateMarioColors(ENTITIES_SELF_ID, pluginOptions[option].value.on, newColors);
+}
+
+static void onChangeVolume(int option)
+{
+	sm64_set_sound_volume(pluginOptions[option].value.num.current / 100.f);
+}
+
 struct PluginOption pluginOptions[] = {
 	{
 		String_FromConst("first_use"),
-		{String_FromConst("")},
-		1, PLUGINOPTION_VALUE_BOOL, {.on=false}, true
+		{String_FromConst("")}, 1,
+		PLUGINOPTION_VALUE_BOOL, {.on=false}, true, NULL
 	},
 	{
 		String_FromConst("hurt"),
-		{String_FromConst("&eSet whether Mario can get hurt.")},
-		1, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
+		{String_FromConst("&eSet whether Mario can get hurt.")}, 1,
+		PLUGINOPTION_VALUE_BOOL, {.on=false}, false, NULL
 	},
 	{
 		String_FromConst("camera"),
-		{String_FromConst("&eRotate the camera automatically behind Mario.")},
-		1, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
+		{String_FromConst("&eRotate the camera automatically behind Mario.")}, 1,
+		PLUGINOPTION_VALUE_BOOL, {.on=false}, false, NULL
 	},
 	{
 		String_FromConst("bgr"),
@@ -81,67 +96,75 @@ struct PluginOption pluginOptions[] = {
 			String_FromConst("&eSwap Mario's RGB colors with BGR."),
 			String_FromConst("&eThis is off by default."),
 			String_FromConst("&eIf Mario's colors appear inverted, change this setting."),
-		},
-		3, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
+		}, 3,
+		PLUGINOPTION_VALUE_BOOL, {.on=false}, false, NULL
 	},
 	{
 		String_FromConst("interpolation"),
-		{String_FromConst("&eSmooth out Mario's position and animations at 60 FPS.")},
-		1, PLUGINOPTION_VALUE_BOOL, {.on=true}, false
+		{String_FromConst("&eSmooth out Mario's position and animations at 60 FPS.")}, 1,
+		PLUGINOPTION_VALUE_BOOL, {.on=true}, false, NULL
 	},
 	{
 		String_FromConst("key_crouch"),
-		{String_FromConst("&eChange Mario's crouch key (Z button).")},
-		1, PLUGINOPTION_VALUE_STRING, {.str={"lshift", keyNames, 122}}, false
+		{String_FromConst("&eChange Mario's crouch key (Z button).")}, 1,
+		PLUGINOPTION_VALUE_STRING, {.str={"lshift", keyNames, 122}}, false, NULL
 	},
 	{
 		String_FromConst("key_attack"),
-		{String_FromConst("&eChange Mario's attack/dive key (B button).")},
-		1, PLUGINOPTION_VALUE_STRING, {.str={"lmouse", keyNames, 122}}, false
+		{String_FromConst("&eChange Mario's attack/dive key (B button).")}, 1,
+		PLUGINOPTION_VALUE_STRING, {.str={"lmouse", keyNames, 122}}, false, NULL
 	},
 	{
 		String_FromConst("custom_colors"),
-		{String_FromConst("&eWhether to use custom Mario colors.")},
-		1, PLUGINOPTION_VALUE_BOOL, {.on=true}, false
+		{String_FromConst("&eWhether to use custom Mario colors.")}, 1,
+		PLUGINOPTION_VALUE_BOOL, {.on=true}, false, onToggleColors
 	},
 
 	// colors
 	{
 		String_FromConst("color_overalls"),
-		{String_FromConst("&eSet colors for Mario's overalls.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col={0,0,255}}, false
+		{String_FromConst("&eSet colors for Mario's overalls.")}, 1,
+		PLUGINOPTION_VALUE_RGB, {.col={0,0,255}}, false, NULL
 	},
 	{
 		String_FromConst("color_shirthat"),
-		{String_FromConst("&eSet colors for Mario's shirt/hat.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col={255,0,0}}, false
+		{String_FromConst("&eSet colors for Mario's shirt/hat.")}, 1,
+		PLUGINOPTION_VALUE_RGB, {.col={255,0,0}}, false, NULL
 	},
 	{
 		String_FromConst("color_skin"),
-		{String_FromConst("&eSet colors for Mario's skin.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col={254,193,121}}, false
+		{String_FromConst("&eSet colors for Mario's skin.")}, 1,
+		PLUGINOPTION_VALUE_RGB, {.col={254,193,121}}, false, NULL
 	},
 	{
 		String_FromConst("color_hair"),
-		{String_FromConst("&eSet colors for Mario's hair.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col={115,6,0}}, false
+		{String_FromConst("&eSet colors for Mario's hair.")}, 1,
+		PLUGINOPTION_VALUE_RGB, {.col={115,6,0}}, false, NULL
 	},
 	{
 		String_FromConst("color_gloves"),
-		{String_FromConst("&eSet colors for Mario's gloves.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col={255,255,255}}, false
+		{String_FromConst("&eSet colors for Mario's gloves.")}, 1,
+		PLUGINOPTION_VALUE_RGB, {.col={255,255,255}}, false, NULL
 	},
 	{
 		String_FromConst("color_shoes"),
-		{String_FromConst("&eSet colors for Mario's shoes.")},
-		1, PLUGINOPTION_VALUE_RGB, {.col={114,28,14}}, false
+		{String_FromConst("&eSet colors for Mario's shoes.")}, 1,
+		PLUGINOPTION_VALUE_RGB, {.col={114,28,14}}, false, NULL
+	},
+	{
+		String_FromConst("volume"),
+		{
+			String_FromConst("&eChange the global sound volume in libsm64."),
+			String_FromConst("&eThis does not affect the music volume."),
+		}, 2,
+		PLUGINOPTION_VALUE_NUMBER, {.num={.current=100, .min=0, .max=100}}, false, onChangeVolume
 	},
 
 #ifdef CLASSIC64_DEBUG
 	{
 		String_FromConst("surface_debugger"),
-		{String_FromConst("&eToggle the SM64 surface debugger.")},
-		1, PLUGINOPTION_VALUE_BOOL, {.on=false}, false
+		{String_FromConst("&eToggle the SM64 surface debugger.")}, 1,
+		PLUGINOPTION_VALUE_BOOL, {.on=false}, false, NULL
 	}
 #endif
 };

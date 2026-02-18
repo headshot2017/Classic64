@@ -21,6 +21,7 @@ enum
 	PLUGINOPTION_COLOR_HAIR,
 	PLUGINOPTION_COLOR_GLOVES,
 	PLUGINOPTION_COLOR_SHOES,
+	PLUGINOPTION_VOLUME,
 #ifdef CLASSIC64_DEBUG
 	PLUGINOPTION_SURFACE_DEBUGGER,
 #endif
@@ -60,6 +61,7 @@ struct PluginOption {
 		struct RGBCol col;
 	} value;
 	bool hidden;
+	void (*onChange)(int option);
 };
 
 extern struct PluginOption pluginOptions[];
