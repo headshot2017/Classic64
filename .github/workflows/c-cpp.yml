@@ -124,9 +124,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update submodules
+      - name: Install git
         run: |
-          git submodule update --init --recursive
+          sudo dnf install git -y
+
+      - name: Update submodules
+        run: git submodule update --init --recursive
 
       - name: Compile SDL2
         run: |
