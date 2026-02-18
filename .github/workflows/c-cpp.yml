@@ -119,12 +119,13 @@ jobs:
           path: lib
 
   build-fedora-x64:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     container: fedora:latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
+
+      - name: Update submodules
+          git submodule update --init --recursive
 
       - name: Compile SDL2
         run: |
