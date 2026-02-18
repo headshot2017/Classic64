@@ -92,7 +92,7 @@ jobs:
           path: lib
 
 
-  build-linux-x64:
+  build-ubuntu-x64:
     runs-on: ubuntu-22.04
 
     steps:
@@ -115,5 +115,35 @@ jobs:
       - name: Use the Upload Artifact GitHub Action
         uses: actions/upload-artifact@v4
         with:
-          name: classic64-linux-x64
+          name: classic64-ubuntu-x64
+          path: lib
+
+  build-fedora-x64:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Compile SDL2
+        run: |
+          git clone https://github.com/libsdl-org/SDL --branch SDL2
+          ./configure
+          make
+          sudo make install
+
+      - name: Compile debug and release
+        run: |
+          mkdir lib lib/debug lib/release
+          make
+          cp dist/libClassic64.so lib/debug
+          make clean
+          make release
+          cp dist/libClassic64.so lib/release
+
+      - name: Use the Upload Artifact GitHub Action
+        uses: actions/upload-artifact@v4
+        with:
+          name: classic64-fedora-x64
           path: lib
