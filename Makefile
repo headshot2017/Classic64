@@ -17,8 +17,8 @@ ENDFLAGS := $(ENDFLAGS) -static -L. -lClassiCube -lole32 -lwinmm -loleaut32 -lim
 
 else ifeq ($(shell uname -s),Darwin)
 BREW_SDL2_PREFIX := $(shell brew --prefix sdl2)
-CFLAGS := $(CFLAGS) -isystem $(BREW_SDL2_PREFIX)/include -Isrc/decomp/include
-LDFLAGS := $(LDFLAGS) -L$(BREW_SDL2_PREFIX)/lib
+CFLAGS := $(CFLAGS) -isystem $(BREW_SDL2_PREFIX)/include -isystem /opt/local/include -Isrc/decomp/include
+LDFLAGS := $(LDFLAGS) -L$(BREW_SDL2_PREFIX)/lib -L/opt/local/lib
 ENDFLAGS := $(ENDFLAGS) -undefined dynamic_lookup
 LIB_FILE := libClassic64.dylib
 
