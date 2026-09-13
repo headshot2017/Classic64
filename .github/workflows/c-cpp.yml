@@ -27,8 +27,7 @@ jobs:
       - name: Generate libClassiCube.a
         shell: msys2 {0}
         run: |
-          wget https://cdn.classicube.net/client/release/win32/ClassiCube.zip
-          unzip -j ClassiCube.zip ClassiCube/ClassiCube.exe
+          wget https://cdn.classicube.net/client/latest/ClassiCube.exe
           gendef ClassiCube.exe
           dlltool -d ClassiCube.def -l libClassiCube.a -D ClassiCube.exe
 
@@ -70,8 +69,8 @@ jobs:
       - name: Generate libClassiCube.a
         shell: msys2 {0}
         run: |
-          wget https://cdn.classicube.net/client/release/win64/ClassiCube.zip
-          unzip -j ClassiCube.zip ClassiCube/ClassiCube.exe
+          wget https://cdn.classicube.net/client/latest/ClassiCube.64.exe
+          mv ClassiCube.64.exe ClassiCube.exe
           gendef ClassiCube.exe
           dlltool -d ClassiCube.def -l libClassiCube.a -D ClassiCube.exe
 
