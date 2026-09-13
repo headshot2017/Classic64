@@ -41,6 +41,12 @@
 #define sign(x) ((x>0)?1:(x<0)?-1:0)
 #define clamp(x, Min, Max) ((x>Max)?Max:(x<Min)?Min:x)
 
+static void _Gfx_SetScratchVbData(GfxResourceID vb, void* vertices, int vCount) {
+	void* data = Gfx_LockScratchVb(vb, VERTEX_FORMAT_TEXTURED, vCount);
+	memcpy(data, vertices, vCount * 3 * sizeof(int64_t));
+	Gfx_UnlockScratchVb(vb);
+}
+
 // shortcut to log messages to chat
 void SendChat(const char* format, const void* arg1, const void* arg2, const void* arg3, const void* arg4) {
 	cc_string msg; char msgBuffer[256];
@@ -542,10 +548,10 @@ void deleteMario(int i)
 	free(obj->geometry.color);
 	free(obj->geometry.normal);
 	free(obj->geometry.uv);
-	Gfx_DeleteDynamicVb(&obj->vertexID);
-	Gfx_DeleteDynamicVb(&obj->texturedVertexID);
+	Gfx_DeleteScratchVb(&obj->vertexID);
+	Gfx_DeleteScratchVb(&obj->texturedVertexID);
 #ifdef CLASSIC64_DEBUG
-	Gfx_DeleteDynamicVb(&obj->debuggerVertexID);
+	Gfx_DeleteScratchVb(&obj->debuggerVertexID);
 #endif
 
 	// restore the original VTABLE if the entity still exists
@@ -822,7 +828,7 @@ void loadNewBlocks(int i, int x, int y, int z, uint32_t *arrayTarget) // specify
 			}
 		}
 		mario->numDebuggerTriangles = vCount;
-		Gfx_SetDynamicVbData(mario->debuggerVertexID, &mario->debuggerVertices, DEBUGGER_MAX_VERTICES);
+		_Gfx_SetScratchVbData(mario->debuggerVertexID, &mario->debuggerVertices, DEBUGGER_MAX_VERTICES);
 	}
 #endif
 }
@@ -883,13 +889,13 @@ void marioTick(struct ScheduledTask* task)
 				marioInstances[i]->geometry.color    = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
 				marioInstances[i]->geometry.normal   = malloc( sizeof(float) * 9 * SM64_GEO_MAX_TRIANGLES );
 				marioInstances[i]->geometry.uv       = malloc( sizeof(float) * 6 * SM64_GEO_MAX_TRIANGLES );
-				marioInstances[i]->vertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
-				marioInstances[i]->texturedVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
+				marioInstances[i]->vertexID = Gfx_CreateScratchVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
+				marioInstances[i]->texturedVertexID = Gfx_CreateScratchVb(VERTEX_FORMAT_TEXTURED, 4 * SM64_GEO_MAX_TRIANGLES);
 				marioInstances[i]->numTexturedTriangles = 0;
 				marioInstances[i]->lastPole = (Vec3){0};
 				marioInstances[i]->lastPoleHeight = 0;
 #ifdef CLASSIC64_DEBUG
-				marioInstances[i]->debuggerVertexID = Gfx_CreateDynamicVb(VERTEX_FORMAT_TEXTURED, DEBUGGER_MAX_VERTICES);
+				marioInstances[i]->debuggerVertexID = Gfx_CreateScratchVb(VERTEX_FORMAT_TEXTURED, DEBUGGER_MAX_VERTICES);
 #endif
 
 				if (i == ENTITIES_SELF_ID)
@@ -1118,8 +1124,8 @@ void marioTick(struct ScheduledTask* task)
 						obj->currGeom[j*3+k] = (Vec3){obj->vertices[j*4+k].x, obj->vertices[j*4+k].y, obj->vertices[j*4+k].z};
 				}
 			}
-			Gfx_SetDynamicVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
-			Gfx_SetDynamicVbData(obj->texturedVertexID, &obj->texturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
+			_Gfx_SetScratchVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
+			_Gfx_SetScratchVbData(obj->texturedVertexID, &obj->texturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
 
 			//if ((int)(obj->lastPos.x) != (int)(obj->currPos.x) || (int)(obj->lastPos.y) != (int)(obj->currPos.y) || (int)(obj->lastPos.z) != (int)(obj->currPos.z))
 			//{
@@ -1162,8 +1168,8 @@ void selfMarioTick(struct ScheduledTask* task)
 			obj->texturedVertices[i*4+3].y = obj->texturedVertices[i*4+2].y;
 			obj->texturedVertices[i*4+3].z = obj->texturedVertices[i*4+2].z;
 		}
-		Gfx_SetDynamicVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
-		Gfx_SetDynamicVbData(obj->texturedVertexID, &obj->texturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
+		_Gfx_SetScratchVbData(obj->vertexID, &obj->vertices, 4 * SM64_GEO_MAX_TRIANGLES);
+		_Gfx_SetScratchVbData(obj->texturedVertexID, &obj->texturedVertices, 4 * SM64_GEO_MAX_TRIANGLES);
 
 		if (marioInterpTicks < 1.f/30) marioInterpTicks += 1.f/300;
 	}
