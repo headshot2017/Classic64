@@ -59,7 +59,7 @@ namespace MCGalaxy
     public sealed class Classic64 : Plugin 
     {
         public override string name { get { return "Classic64"; } }
-        public override string MCGalaxy_Version { get { return "1.9.4.0"; } }
+        public override string MCGalaxy_Version { get { return "1.9.5.4"; } }
         public override string creator { get { return "Headshotnoby"; } }
 
 		public static Dictionary<string, marioInstance> marioSettings = new Dictionary<string, marioInstance>();
@@ -106,7 +106,6 @@ namespace MCGalaxy
 			byte[] data = new byte[64];
 
 			data[0] = (byte)MarioOpcodes.OPCODE_MARIO_SET_COLORS;
-			data[1] = p.EntityID;
 			data[2] = (byte)(marioSettings[p.name].customColors ? 1 : 0);
 			if (marioSettings[p.name].customColors)
 			{
@@ -121,6 +120,7 @@ namespace MCGalaxy
 			foreach (Player other in PlayerInfo.Online.Items)
 			{
 				if (other.level != p.level || p == other || !marioSettings[other.name].hasPlugin) continue; // only send to those in the same map
+				other.EntityList.GetID(p, out data[1]);
 				other.Send(Packet.PluginMessage(64, data));
 			}
 		}
@@ -130,12 +130,12 @@ namespace MCGalaxy
 			byte[] data = new byte[64];
 
 			data[0] = (byte)MarioOpcodes.OPCODE_MARIO_SET_CAP;
-			data[1] = p.EntityID;
 			NetUtils.WriteI32((int)marioSettings[p.name].cap, data, 2);
 
 			foreach (Player other in PlayerInfo.Online.Items)
 			{
 				if (other.level != p.level || p == other || !marioSettings[other.name].hasPlugin) continue; // only send to those in the same map
+				other.EntityList.GetID(p, out data[1]);
 				other.Send(Packet.PluginMessage(64, data));
 			}
 		}
@@ -151,7 +151,6 @@ namespace MCGalaxy
 				byte[] data = new byte[64];
 
 				data[0] = (byte)MarioOpcodes.OPCODE_MARIO_SET_COLORS;
-				data[1] = other.EntityID;
 				data[2] = (byte)(marioSettings[other.name].customColors ? 1 : 0);
 				if (marioSettings[other.name].customColors)
 				{
@@ -163,6 +162,7 @@ namespace MCGalaxy
 					}
 				}
 
+				other.EntityList.GetID(p, out data[1]);
 				p.Send(Packet.PluginMessage(64, data));
 			}
 		}
@@ -178,7 +178,7 @@ namespace MCGalaxy
 				byte[] data = new byte[64];
 
 				data[0] = (byte)MarioOpcodes.OPCODE_MARIO_SET_CAP;
-				data[1] = other.EntityID;
+				other.EntityList.GetID(p, out data[1]);
 				NetUtils.WriteI32((int)marioSettings[other.name].cap, data, 2);
 
 				p.Send(Packet.PluginMessage(64, data));
@@ -222,7 +222,7 @@ namespace MCGalaxy
 					byte[] data = new byte[64];
 
 					data[0] = (byte)MarioOpcodes.OPCODE_MARIO_TICK;
-					data[1] = other.EntityID;
+					other.EntityList.GetID(p, out data[1]);
 					NetUtils.WriteI16((short)marioSettings[other.name].tickdata.health, data, 2);
 					NetUtils.WriteI32((int)marioSettings[other.name].tickdata.action, data, 4);
 					NetUtils.WriteI32((int)marioSettings[other.name].tickdata.actionArg, data, 8);

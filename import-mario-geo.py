@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+from pathlib import Path
 import os
 import shutil
 import urllib.request
@@ -64,8 +65,9 @@ extern Lights1 mario_brown2_lights_group[];
 def main():
     global model_inc_h
 
-    shutil.rmtree("src/decomp/mario", ignore_errors=True)
-    os.makedirs("src/decomp/mario", exist_ok=True)
+    path = Path("src/decomp/mario")
+    shutil.rmtree(path, ignore_errors=True)
+    os.makedirs(path, exist_ok=True)
 
     print("Downloading " + GEO_URL)
     geo_inc_c = urllib.request.urlopen(GEO_URL).read().decode('utf8')
